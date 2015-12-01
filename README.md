@@ -119,6 +119,8 @@ Here is an abbreviated list of commonly used parameters.  An example properties 
     * `etl.record.writer.provider.class=`
 * Delimiter for writing string records (default is "\n")
     * `etl.output.record.delimiter=`
+* Limit numbers of open writers (default is 100)
+    * `etl.writers.open.max=`
 
 ### Running Camus
 
