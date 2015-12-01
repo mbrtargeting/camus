@@ -1,5 +1,6 @@
 package com.linkedin.camus.etl.kafka;
 
+import com.linkedin.camus.callback.Callback;
 import com.linkedin.camus.etl.kafka.common.DateUtils;
 import com.linkedin.camus.etl.kafka.common.EmailClient;
 import com.linkedin.camus.etl.kafka.common.EtlCounts;
@@ -111,6 +112,7 @@ public class CamusJob extends Configured implements Tool {
   public static final String KAFKA_HOST_PORT = "kafka.host.port";
   public static final String KAFKA_TIMEOUT_VALUE = "kafka.timeout.value";
   public static final String CAMUS_REPORTER_CLASS = "etl.reporter.class";
+  public static final String CAMUS_CALLBACK_CLASS = "etl.callback.class";
   public static final String LOG4J_CONFIGURATION = "log4j.configuration";
 
   private static org.apache.log4j.Logger log;
@@ -384,6 +386,7 @@ public class CamusJob extends Configured implements Tool {
     stopTiming("commit");
     stopTiming("total");
     createReport(job, timingMap);
+    executeCallback(job);
 
     if (!job.isSuccessful()) {
       JobClient client = new JobClient(new JobConf(job.getConfiguration()));
@@ -612,6 +615,25 @@ public class CamusJob extends Configured implements Tool {
   }
 
   /**
+   * Creates and calls a Callback object if a callback class was defined.
+   * @param job Hadoop job object.
+   * @throws IOException
+   * @throws ClassNotFoundException
+   */
+  private void executeCallback(final Job job) throws IOException, ClassNotFoundException {
+    final String callbackClass = getCallbackClass(job);
+    if (callbackClass != null) {
+      final Class cls = job.getConfiguration().getClassByName(callbackClass);
+      final Callback callback = ((Callback) ReflectionUtils.newInstance(cls, job.getConfiguration()));
+      if (job.isSuccessful()) {
+        callback.onSuccess(job);
+      } else {
+        callback.onFailure(job);
+      }
+    }
+  }
+
+  /**
    * Creates a diagnostic report based on provided logger
    * defaults to TimeLogger which focusses on timing breakdowns. Useful
    * for determining where to optimize.
@@ -745,6 +767,10 @@ public class CamusJob extends Configured implements Tool {
 
   public static String getReporterClass(JobContext job) {
     return job.getConfiguration().get(CAMUS_REPORTER_CLASS, "com.linkedin.camus.etl.kafka.reporter.TimeReporter");
+  }
+
+  public static String getCallbackClass(final JobContext jobContext) {
+    return jobContext.getConfiguration().get(CAMUS_CALLBACK_CLASS);
   }
 }
 
