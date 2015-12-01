@@ -121,6 +121,8 @@ Here is an abbreviated list of commonly used parameters.  An example properties 
     * `etl.output.record.delimiter=`
 * Limit numbers of open writers (default is 100)
     * `etl.writers.open.max=`
+* Callback class to do some stuff after the job has finished
+    * `etl.callback.class=`
 
 ### Running Camus
 
