@@ -157,14 +157,14 @@ public class KafkaReader {
     log.debug("\nAsking for offset : " + (currentOffset));
     PartitionFetchInfo partitionFetchInfo = new PartitionFetchInfo(currentOffset, fetchBufferSize);
 
-    HashMap<TopicAndPartition, PartitionFetchInfo> fetchInfo = new HashMap<TopicAndPartition, PartitionFetchInfo>();
+    HashMap<TopicAndPartition, PartitionFetchInfo> fetchInfo = new HashMap<>();
     fetchInfo.put(topicAndPartition, partitionFetchInfo);
 
     FetchRequest fetchRequest =
         new FetchRequest(CamusJob.getKafkaFetchRequestCorrelationId(context), CamusJob.getKafkaClientName(context),
             CamusJob.getKafkaFetchRequestMaxWait(context), CamusJob.getKafkaFetchRequestMinBytes(context), fetchInfo);
 
-    FetchResponse fetchResponse = null;
+    FetchResponse fetchResponse;
     try {
       fetchResponse = simpleConsumer.fetch(fetchRequest);
       if (fetchResponse.hasError()) {
