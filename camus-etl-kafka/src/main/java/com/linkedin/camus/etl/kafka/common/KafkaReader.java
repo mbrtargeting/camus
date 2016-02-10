@@ -84,14 +84,8 @@ public class KafkaReader {
   }
 
   public boolean hasNext() throws IOException {
-    if (currentOffset >= lastOffset) {
-      return false;
-    }
-    if (messageIter != null && messageIter.hasNext()) {
-      return true;
-    } else {
-      return fetch();
-    }
+    return (currentOffset < lastOffset)
+           && (messageIter != null && messageIter.hasNext() || fetch());
   }
 
   /**
@@ -132,12 +126,12 @@ public class KafkaReader {
   }
 
   private byte[] getBytes(ByteBuffer buf) {
-    byte[] bytes = null;
-    if (buf != null) {
-      int size = buf.remaining();
-      bytes = new byte[size];
-      buf.get(bytes, buf.position(), size);
+    if (buf == null) {
+      return null;
     }
+    int size = buf.remaining();
+    byte[] bytes = new byte[size];
+    buf.get(bytes, buf.position(), size);
     return bytes;
   }
 
@@ -147,7 +141,6 @@ public class KafkaReader {
    * @return false if there's no more fetches
    * @throws IOException
    */
-
   public boolean fetch() throws IOException {
     if (currentOffset >= lastOffset) {
       return false;
@@ -168,15 +161,15 @@ public class KafkaReader {
     try {
       fetchResponse = simpleConsumer.fetch(fetchRequest);
       if (fetchResponse.hasError()) {
-        String message =
-            "Error Code generated : " + fetchResponse.errorCode(kafkaRequest.getTopic(), kafkaRequest.getPartition())
-                + "\n";
+        short errorCode = fetchResponse.errorCode(kafkaRequest.getTopic(),
+                                                  kafkaRequest.getPartition());
+        String message = "Error Code generated : " + errorCode ;
         throw new RuntimeException(message);
       }
       return processFetchResponse(fetchResponse, tempTime);
     } catch (Exception e) {
       log.info("Exception generated during fetch for topic " + kafkaRequest.getTopic() + ": " + e.getMessage()
-          + ". Will refresh topic metadata and retry.");
+           + "\n. Will refresh topic metadata and retry.");
       return refreshTopicMetadataAndRetryFetch(fetchRequest, tempTime);
     }
   }
