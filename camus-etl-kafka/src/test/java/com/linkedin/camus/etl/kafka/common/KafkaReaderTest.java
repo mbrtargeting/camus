@@ -44,9 +44,10 @@ public class KafkaReaderTest {
     this.kafkaReader = new KafkaReader(new EtlInputFormat(), context, request, 100, 100);
   }
 
-  @Test
-  public void testFetchFailure() throws SecurityException, NoSuchFieldException, IllegalArgumentException,
-      IllegalAccessException, IOException {
+  @Test(expected = KafkaReader.MetadataFetchException.class)
+  public void testFetchFailure()
+          throws SecurityException, NoSuchFieldException, IllegalArgumentException,
+                 IllegalAccessException, IOException, KafkaReader.MetadataFetchException {
     SimpleConsumer consumer = EasyMock.createNiceMock(SimpleConsumer.class);
     EasyMock.expect(consumer.fetch((FetchRequest) EasyMock.anyObject())).andReturn(null);
     EasyMock.expectLastCall().times(2);

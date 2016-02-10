@@ -355,6 +355,8 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         log.info("Records read : " + count);
         count = 0;
         reader = null;
+      } catch (KafkaReader.MetadataFetchException e) {
+        throw new IOException(e);
       } catch (Throwable t) {
         Exception e = new Exception(t.getLocalizedMessage(), t);
         e.setStackTrace(t.getStackTrace());

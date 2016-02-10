@@ -57,7 +57,7 @@ public class KafkaReader {
    * Construct using the json representation of the kafka request
    */
   public KafkaReader(EtlInputFormat inputFormat, TaskAttemptContext context, EtlRequest request, int clientTimeout,
-      int fetchBufferSize) throws Exception {
+      int fetchBufferSize) throws Exception, MetadataFetchException {
     this.fetchBufferSize = fetchBufferSize;
     this.context = context;
 
@@ -80,10 +80,9 @@ public class KafkaReader {
     simpleConsumer = inputFormat.createSimpleConsumer(context, uri.getHost(), uri.getPort());
     log.info("Connected to leader " + uri + " beginning reading at offset " + beginOffset + " latest offset="
         + lastOffset);
-    fetch();
   }
 
-  public boolean hasNext() throws IOException {
+  public boolean hasNext() throws IOException, MetadataFetchException {
     return (currentOffset < lastOffset)
            && (messageIter != null && messageIter.hasNext() || fetch());
   }
@@ -96,7 +95,7 @@ public class KafkaReader {
    * @return true if there exists more events
    * @throws IOException
    */
-  public KafkaMessage getNext(EtlKey etlKey) throws IOException {
+  public KafkaMessage getNext(EtlKey etlKey) throws IOException, MetadataFetchException {
     if (hasNext()) {
 
       MessageAndOffset msgAndOffset = messageIter.next();
@@ -141,7 +140,7 @@ public class KafkaReader {
    * @return false if there's no more fetches
    * @throws IOException
    */
-  public boolean fetch() throws IOException {
+  public boolean fetch() throws IOException, MetadataFetchException {
     if (currentOffset >= lastOffset) {
       return false;
     }
@@ -174,7 +173,8 @@ public class KafkaReader {
     }
   }
 
-  private boolean refreshTopicMetadataAndRetryFetch(FetchRequest fetchRequest, long tempTime) {
+  private boolean refreshTopicMetadataAndRetryFetch(FetchRequest fetchRequest, long tempTime)
+      throws MetadataFetchException {
     try {
       refreshTopicMetadata();
       FetchResponse fetchResponse = simpleConsumer.fetch(fetchRequest);
@@ -187,8 +187,8 @@ public class KafkaReader {
       return processFetchResponse(fetchResponse, tempTime);
     } catch (Exception e) {
       log.info("Exception generated during fetch for topic " + kafkaRequest.getTopic()
-          + ". This topic will be skipped.");
-      return false;
+          + ". Failing...");
+        throw new MetadataFetchException(e);
     }
   }
 
@@ -312,5 +312,12 @@ public class KafkaReader {
    */
   public long getTotalFetchTime() {
     return totalFetchTime;
+  }
+
+  public static class MetadataFetchException extends Exception {
+
+    public MetadataFetchException(Exception e) {
+      super(e);
+    }
   }
 }
