@@ -31,7 +31,7 @@ import com.linkedin.camus.etl.kafka.partitioner.DefaultPartitioner;
  */
 
 public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
-  public static final String ETL_DESTINATION_PATH = "etl.destination.path";
+  private static final String ETL_STAGING_PATH = "etl.staging.path";
   public static final String ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY = "etl.destination.path.topic.sub.dir";
   public static final String ETL_DESTINATION_PATH_TOPIC_SUBDIRFORMAT = "etl.destination.path.topic.sub.dirformat";
   public static final String ETL_DESTINATION_PATH_TOPIC_SUBDIRFORMAT_LOCALE = "etl.destination.path.topic.sub.dirformat.locale";
@@ -103,11 +103,11 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
   }
 
   public static void setDestinationPath(JobContext job, Path dest) {
-    job.getConfiguration().set(ETL_DESTINATION_PATH, dest.toString());
+    job.getConfiguration().set(ETL_STAGING_PATH, dest.toString());
   }
 
   public static Path getDestinationPath(JobContext job) {
-    return new Path(job.getConfiguration().get(ETL_DESTINATION_PATH));
+    return new Path(job.getConfiguration().get(ETL_STAGING_PATH));
   }
 
   public static void setDestPathTopicSubDir(JobContext job, String subPath) {

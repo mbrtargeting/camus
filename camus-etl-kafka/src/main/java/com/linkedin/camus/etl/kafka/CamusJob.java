@@ -1,5 +1,8 @@
 package com.linkedin.camus.etl.kafka;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import com.linkedin.camus.callback.Callback;
 import com.linkedin.camus.etl.kafka.common.DateUtils;
 import com.linkedin.camus.etl.kafka.common.EmailClient;
@@ -12,24 +15,6 @@ import com.linkedin.camus.etl.kafka.mapred.EtlMapper;
 import com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat;
 import com.linkedin.camus.etl.kafka.mapred.EtlRecordReader;
 import com.linkedin.camus.etl.kafka.reporter.BaseReporter;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -45,8 +30,10 @@ import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
@@ -74,12 +61,29 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.regex.Pattern;
 
 
 public class CamusJob extends Configured implements Tool {
 
+  public static final String ETL_DESTINATION_PATH = "etl.destination.path";
   public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
   public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
   public static final String ETL_COUNTS_PATH = "etl.counts.path";
@@ -251,15 +255,19 @@ public class CamusJob extends Configured implements Tool {
     }
     FileSystem fs = FileSystem.get(job.getConfiguration());
 
-    log.info("Dir Destination set to: " + EtlMultiOutputFormat.getDestinationPath(job));
-
-    Path execBasePath = new Path(props.getProperty(ETL_EXECUTION_BASE_PATH));
-    Path execHistory = new Path(props.getProperty(ETL_EXECUTION_HISTORY_PATH));
+    final Path execBasePath = new Path(props.getProperty(ETL_EXECUTION_BASE_PATH));
+    final Path execHistory = new Path(props.getProperty(ETL_EXECUTION_HISTORY_PATH));
+    final Path stagingPath = new Path(execBasePath, "_staging");
+    EtlMultiOutputFormat.setDestinationPath(job, stagingPath);
+    log.info("Staging directory set to: " + stagingPath.toString());
+    final Path destinationPath = new Path(getConf().get(ETL_DESTINATION_PATH));
+    log.info("Destination directory set to: " + getConf().get(ETL_DESTINATION_PATH));
 
     if (!fs.exists(execBasePath)) {
       log.info("The execution base path does not exist. Creating the directory");
       fs.mkdirs(execBasePath);
     }
+    fs.mkdirs(stagingPath);
     if (!fs.exists(execHistory)) {
       log.info("The history base path does not exist. Creating the directory.");
       fs.mkdirs(execHistory);
@@ -341,7 +349,7 @@ public class CamusJob extends Configured implements Tool {
     // appropriate date-partitioned subdir in camus.destination.path
     DateTimeFormatter dateFmt = DateUtils.getDateTimeFormatter("YYYY-MM-dd-HH-mm-ss", DateTimeZone.UTC);
     String executionDate = new DateTime().toString(dateFmt);
-    Path newExecutionOutput = new Path(execBasePath, executionDate);
+    final Path newExecutionOutput = new Path(execBasePath, executionDate);
     FileOutputFormat.setOutputPath(job, newExecutionOutput);
     log.info("New execution temp location: " + newExecutionOutput.toString());
 
@@ -369,8 +377,6 @@ public class CamusJob extends Configured implements Tool {
     stopTiming("hadoop");
     startTiming("commit");
 
-    boolean hadExecutionErrors = checkExecutionErrors(fs, newExecutionOutput);
-
     checkIfTooManySkippedMsg(counters);
 
     // Send Tracking counts to Kafka
@@ -378,16 +384,9 @@ public class CamusJob extends Configured implements Tool {
     Class<? extends EtlCounts> etlCountsClass = (Class<? extends EtlCounts>) Class.forName(etlCountsClassName);
     sendTrackingCounts(job, fs, newExecutionOutput, etlCountsClass);
 
-    Path newHistory = new Path(execHistory, executionDate);
-    log.info("Moving execution to history : " + newHistory);
-    fs.rename(newExecutionOutput, newHistory);
-
     log.info("Job finished");
     stopTiming("commit");
     stopTiming("total");
-    createReport(job, timingMap);
-    executeCallback(job);
-
     if (!job.isSuccessful()) {
       JobClient client = new JobClient(new JobConf(job.getConfiguration()));
 
@@ -404,27 +403,91 @@ public class CamusJob extends Configured implements Tool {
       throw new RuntimeException("hadoop job failed");
     }
 
-    if (hadExecutionErrors
-        && props.getProperty(ETL_FAIL_ON_ERRORS, Boolean.FALSE.toString()).equalsIgnoreCase(Boolean.TRUE.toString())) {
-      throw new RuntimeException("Camus saw errors, check stderr");
-    }
+    final Path newHistory = new Path(execHistory, executionDate);
+    try {
+      // Go through all possible errors in output format and throw
+      boolean hadExecutionErrors = checkExecutionErrors(fs, newExecutionOutput);
+      if (hadExecutionErrors
+          && props.getProperty(ETL_FAIL_ON_ERRORS, Boolean.FALSE.toString()).equalsIgnoreCase(Boolean.TRUE.toString())) {
+        throw new RuntimeException("Camus saw errors, check stderr");
+      }
 
-    if (EtlInputFormat.reportJobFailureDueToOffsetOutOfRange) {
-      EtlInputFormat.reportJobFailureDueToOffsetOutOfRange = false;
-      if (props.getProperty(ETL_FAIL_ON_OFFSET_OUTOFRANGE, ETL_FAIL_ON_OFFSET_OUTOFRANGE_DEFAULT)
-        .equalsIgnoreCase(Boolean.TRUE.toString())) {
-        throw new RuntimeException("Some topics skipped due to offsets from Kafka metadata out of range.");
+      if (EtlInputFormat.reportJobFailureDueToOffsetOutOfRange) {
+        if (props.getProperty(ETL_FAIL_ON_OFFSET_OUTOFRANGE, ETL_FAIL_ON_OFFSET_OUTOFRANGE_DEFAULT)
+                .equalsIgnoreCase(Boolean.TRUE.toString())) {
+          throw new RuntimeException("Some topics skipped due to offsets from Kafka metadata out of range.");
+        }
+      }
+
+      if (EtlInputFormat.reportJobFailureUnableToGetOffsetFromKafka) {
+        throw new RuntimeException("Some topics skipped due to failure in getting latest offset from Kafka leaders.");
+      }
+
+      if (EtlInputFormat.reportJobFailureDueToLeaderNotAvailable) {
+        throw new RuntimeException("Some topic partitions skipped due to Kafka leader not available.");
+      }
+
+      log.info("Moving execution to history : " + newHistory);
+      fs.rename(newExecutionOutput, newHistory);
+      log.info("Moving staged data to destination : " + destinationPath);
+      moveDataToDestination(fs, stagingPath, destinationPath);
+    } catch (Throwable t) {
+      // in case of any error, we want to remove history
+      if (fs.exists(newExecutionOutput)) {
+        log.error("Removing staged execution history : " + newExecutionOutput);
+        fs.delete(newExecutionOutput, true);
+      }
+      if (fs.exists(newHistory)) {
+        log.error("Removing execution history : " + newHistory);
+        fs.delete(newHistory, true);
+      }
+      throw t;
+    } finally {
+      if (fs.exists(stagingPath)) {
+        log.info("Removing staged data : " + stagingPath);
+        fs.delete(stagingPath, true);
       }
     }
+    createReport(job, timingMap);
+    executeCallback(job);
+  }
 
-    if (EtlInputFormat.reportJobFailureUnableToGetOffsetFromKafka) {
-      EtlInputFormat.reportJobFailureUnableToGetOffsetFromKafka = false;
-      throw new RuntimeException("Some topics skipped due to failure in getting latest offset from Kafka leaders.");
+  private void moveDataToDestination(final FileSystem fs, final Path stagingPath,
+                                     final Path destinationPath) throws IOException {
+    // Create destination directory if not exist
+    if (!fs.exists(destinationPath)) {
+      fs.mkdirs(destinationPath);
     }
-
-    if (EtlInputFormat.reportJobFailureDueToLeaderNotAvailable) {
-      EtlInputFormat.reportJobFailureDueToLeaderNotAvailable = false;
-      throw new RuntimeException("Some topic partitions skipped due to Kafka leader not available.");
+    // iterate over source files and move to final destination
+    final RemoteIterator<LocatedFileStatus> files = fs.listFiles(stagingPath, true);
+    List<Path> movedFiles = new LinkedList<>();
+    List<Path> createdDirs = new LinkedList<>();
+    try {
+      while (files.hasNext()) {
+        final LocatedFileStatus f = files.next();
+        if (f.isDirectory()) {
+          continue;
+        }
+        final Path srcPath = f.getPath();
+        final Path dstPath = new Path(srcPath.toString().replace(stagingPath.toString(),
+                                                                 destinationPath.toString()));
+        log.info(String.format("Moving %s to %s.", srcPath.toString(), dstPath.toString()));
+        if (!fs.exists(dstPath.getParent())) {
+          fs.mkdirs(dstPath.getParent());
+          createdDirs.add(dstPath.getParent());
+        }
+        fs.rename(srcPath, dstPath);
+        movedFiles.add(dstPath);
+      }
+    } catch (Exception e) {
+      // in case of error, clean up files already created!
+      for (Path movedFile : movedFiles) {
+        fs.delete(movedFile, true);
+      }
+      for (Path createdDir : createdDirs) {
+        fs.delete(createdDir, true);
+      }
+      throw e;
     }
   }
 

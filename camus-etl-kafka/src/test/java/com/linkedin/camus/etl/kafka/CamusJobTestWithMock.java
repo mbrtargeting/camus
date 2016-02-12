@@ -109,7 +109,7 @@ public class CamusJobTestWithMock {
 
     props = new Properties();
 
-    props.setProperty(EtlMultiOutputFormat.ETL_DESTINATION_PATH, destinationPath);
+    props.setProperty(CamusJob.ETL_DESTINATION_PATH, destinationPath);
     props.setProperty(CamusJob.ETL_EXECUTION_BASE_PATH, path + EXECUTION_BASE_PATH);
     props.setProperty(CamusJob.ETL_EXECUTION_HISTORY_PATH, path + EXECUTION_HISTORY_PATH);
 

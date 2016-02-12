@@ -48,6 +48,7 @@ public class CamusJobTest {
 
   private static final String BASE_PATH = "/camus";
   private static final String DESTINATION_PATH = BASE_PATH + "/destination";
+  private static final String STAGING_PATH = BASE_PATH + "/staging";
   private static final String EXECUTION_BASE_PATH = BASE_PATH + "/execution";
   private static final String EXECUTION_HISTORY_PATH = EXECUTION_BASE_PATH + "/history";
 
@@ -82,6 +83,7 @@ public class CamusJobTest {
   private CamusJob job;
   private TemporaryFolder folder;
   private String destinationPath;
+  private String stagingPath;
 
   @Before
   public void before() throws IOException, NoSuchFieldException, IllegalAccessException {
@@ -92,10 +94,11 @@ public class CamusJobTest {
 
     String path = folder.getRoot().getAbsolutePath();
     destinationPath = path + DESTINATION_PATH;
+    stagingPath = path + STAGING_PATH;
 
     props = cluster.getProps();
 
-    props.setProperty(EtlMultiOutputFormat.ETL_DESTINATION_PATH, destinationPath);
+    props.setProperty(CamusJob.ETL_DESTINATION_PATH, destinationPath);
     props.setProperty(CamusJob.ETL_EXECUTION_BASE_PATH, path + EXECUTION_BASE_PATH);
     props.setProperty(CamusJob.ETL_EXECUTION_HISTORY_PATH, path + EXECUTION_HISTORY_PATH);
 
