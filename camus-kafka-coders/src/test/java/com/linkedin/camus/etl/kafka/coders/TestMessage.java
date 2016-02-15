@@ -67,13 +67,13 @@ public class TestMessage implements Message {
         return this.checksum;
     }
 
-    @Override
-    public void validate() throws IOException {
-
-    }
-
     public TestMessage setChecksum(long checksum) {
         this.checksum = checksum;
         return this;
+    }
+
+    @Override
+    public void validate() throws IOException {
+
     }
 }

@@ -3,6 +3,7 @@ package com.linkedin.camus.coders;
 import java.util.Properties;
 
 public abstract class MessageEncoder<R, M> {
+
     protected Properties props;
     protected String topicName;
 
@@ -12,5 +13,5 @@ public abstract class MessageEncoder<R, M> {
     }
 
     public abstract byte[] toBytes(R record);
-    
+
 }

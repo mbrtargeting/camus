@@ -8,11 +8,11 @@ import org.apache.hadoop.io.Writable;
  * Container for messages.  Enables the use of a custom message decoder with knowledge
  * of where these values are stored in the message schema
  *
- * @author kgoodhop
- *
  * @param <R> The type of decoded payload
+ * @author kgoodhop
  */
 public class CamusWrapper<R> {
+
     private R record;
     private long timestamp;
     private MapWritable partitionMap;
@@ -35,7 +35,6 @@ public class CamusWrapper<R> {
 
     /**
      * Returns the payload record for a single message
-     * @return
      */
     public R getRecord() {
         return record;
@@ -43,7 +42,6 @@ public class CamusWrapper<R> {
 
     /**
      * Returns current if not set by the decoder
-     * @return
      */
     public long getTimestamp() {
         return timestamp;
@@ -58,6 +56,7 @@ public class CamusWrapper<R> {
 
     /**
      * Get a value for partitions
+     *
      * @return the value for the given key
      */
     public Writable get(Writable key) {

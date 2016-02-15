@@ -4,6 +4,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 
 public interface IEtlKey {
+
     String getServer();
 
     String getService();
@@ -21,7 +22,7 @@ public interface IEtlKey {
     long getOffset();
 
     long getChecksum();
-    
+
     long getMessageSize();
 
     MapWritable getPartitionMap();

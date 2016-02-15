@@ -1,9 +1,10 @@
 package com.linkedin.camus.etl.kafka.common;
 
-import kafka.message.Message;
 import org.apache.hadoop.fs.ChecksumException;
 
 import java.io.IOException;
+
+import kafka.message.Message;
 
 /**
  * Created by michaelandrepearce on 05/04/15.
@@ -19,7 +20,8 @@ public class KafkaMessage implements com.linkedin.camus.coders.Message {
     private long checksum = 0;
 
 
-    public KafkaMessage(byte[] payload, byte[] key, String topic, int partition, long offset, long checksum){
+    public KafkaMessage(byte[] payload, byte[] key, String topic, int partition, long offset,
+                        long checksum) {
         this.payload = payload;
         this.key = key;
         this.topic = topic;
@@ -61,14 +63,16 @@ public class KafkaMessage implements com.linkedin.camus.coders.Message {
     public void validate() throws IOException {
         // check the checksum of message.
         Message readMessage;
-        if (key == null){
+        if (key == null) {
             readMessage = new Message(payload);
         } else {
             readMessage = new Message(payload, key);
         }
 
         if (checksum != readMessage.checksum()) {
-            throw new ChecksumException("Invalid message checksum : " + readMessage.checksum() + ". Expected " + checksum,
+            throw new ChecksumException(
+                    "Invalid message checksum : " + readMessage.checksum() + ". Expected "
+                    + checksum,
                     offset);
         }
     }
