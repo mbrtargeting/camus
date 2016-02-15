@@ -27,7 +27,7 @@ public abstract class Partitioner extends Configured {
     public abstract String encodePartition(JobContext context, IEtlKey etlKey);
 
     /**
-     * Return a string representing the partitioned directory structure where the .avro files will be moved.
+     * Return a string representing the partitioned directory structure where the output files will be moved.
      *
      * For example, if you were using Hive style partitioning, a timestamp based partitioning scheme would return
      *    topic-name/year=2012/month=02/day=04/hour=12
@@ -38,7 +38,7 @@ public abstract class Partitioner extends Configured {
      * @param topic The topic name
      * @param encodedPartition The encoded partition values. This will be the return of the the encodePartition() method
      *                         above.
-     * @return A path string where the avro files will be moved to.
+     * @return A path string where the output files will be moved to.
      */
     public abstract String generatePartitionedPath(JobContext context, String topic, String encodedPartition);
     
@@ -53,7 +53,7 @@ public abstract class Partitioner extends Configured {
      * @param offset final offset in partition was read too.
      * @param encodedPartition The encoded partition values. This will be the return of the the encodePartition() method
      *                         above.
-     * @return A path string where the avro files will be moved to.
+     * @return A path string where the output files will be moved to.
      */
     public abstract String generateFileName(JobContext context, String topic, String brokerId, int partitionId, 
         int count, long offset, String encodedPartition);
@@ -67,7 +67,7 @@ public abstract class Partitioner extends Configured {
      * @param partitionId the partitionId
      * @param encodedPartition The encoded partition values. This will be the return of the the encodePartition() method
      *                         above.
-     * @return A path string where the avro files will be moved to.
+     * @return A path string where the output files will be moved to.
      */
     public abstract String getWorkingFileName(JobContext context, String topic, String brokerId, 
         int partitionId, String encodedPartition);

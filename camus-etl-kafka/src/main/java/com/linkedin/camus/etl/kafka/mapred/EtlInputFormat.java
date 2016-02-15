@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.MessageDecoder;
 import com.linkedin.camus.etl.kafka.CamusJob;
-import com.linkedin.camus.etl.kafka.coders.KafkaAvroMessageDecoder;
+import com.linkedin.camus.etl.kafka.coders.JsonStringMessageDecoder;
 import com.linkedin.camus.etl.kafka.coders.MessageDecoderFactory;
 import com.linkedin.camus.etl.kafka.common.EmailClient;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
@@ -698,7 +698,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
   public static Class<MessageDecoder> getMessageDecoderClass(JobContext job) {
     return (Class<MessageDecoder>) job.getConfiguration().getClass(CAMUS_MESSAGE_DECODER_CLASS,
-        KafkaAvroMessageDecoder.class);
+        JsonStringMessageDecoder.class);
   }
 
   public static Class<MessageDecoder> getMessageDecoderClass(JobContext job, String topicName) {

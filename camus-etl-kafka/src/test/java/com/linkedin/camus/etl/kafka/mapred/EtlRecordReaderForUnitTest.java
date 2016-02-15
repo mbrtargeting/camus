@@ -9,7 +9,6 @@ import org.easymock.EasyMock;
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.MessageDecoder;
 import com.linkedin.camus.etl.kafka.coders.MessageDecoderFactory;
-import com.linkedin.camus.schemaregistry.SchemaNotFoundException;
 
 
 public class EtlRecordReaderForUnitTest extends EtlRecordReader {
@@ -43,7 +42,7 @@ public class EtlRecordReaderForUnitTest extends EtlRecordReader {
 
   public static MessageDecoder createMockDecoder30PercentSchemaNotFound() {
     MessageDecoder mockDecoder = EasyMock.createNiceMock(MessageDecoder.class);
-    EasyMock.expect(mockDecoder.decode(EasyMock.anyObject())).andThrow(new SchemaNotFoundException()).times(3);
+    EasyMock.expect(mockDecoder.decode(EasyMock.anyObject())).andThrow(new IOException()).times(3);
     EasyMock.expect(mockDecoder.decode(EasyMock.anyObject())).andReturn(new CamusWrapper<String>("dummy")).times(7);
     EasyMock.replay(mockDecoder);
     return mockDecoder;

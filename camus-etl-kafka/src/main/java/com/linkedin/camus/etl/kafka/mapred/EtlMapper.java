@@ -2,7 +2,6 @@ package com.linkedin.camus.etl.kafka.mapred;
 
 import java.io.IOException;
 
-import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import com.linkedin.camus.coders.CamusWrapper;
@@ -12,9 +11,9 @@ import com.linkedin.camus.etl.kafka.common.EtlKey;
 /**
  * KafkaETL mapper
  * 
- * input -- EtlKey, AvroWrapper
+ * input -- EtlKey
  * 
- * output -- EtlKey, AvroWrapper
+ * output -- EtlKey
  * 
  */
 public class EtlMapper extends Mapper<EtlKey, CamusWrapper, EtlKey, CamusWrapper> {

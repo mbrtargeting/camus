@@ -9,7 +9,6 @@ import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.EtlRequest;
 import com.linkedin.camus.etl.kafka.common.ExceptionWritable;
 import com.linkedin.camus.etl.kafka.common.KafkaReader;
-import com.linkedin.camus.schemaregistry.SchemaNotFoundException;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -93,7 +92,6 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     ClassLoader loader = EtlRecordReader.class.getClassLoader();
     log.info("PWD: " + System.getProperty("user.dir"));
     log.info("classloader: " + loader.getClass());
-    log.info("org.apache.avro.Schema: " + loader.getResource("org/apache/avro/Schema.class"));
 
     this.split = (EtlSplit) split;
     this.context = context;
@@ -141,11 +139,6 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     try {
       r = decoder.decode(message);
       mapperContext.getCounter(KAFKA_MSG.DECODE_SUCCESSFUL).increment(1);
-    } catch (SchemaNotFoundException e) {
-      mapperContext.getCounter(KAFKA_MSG.SKIPPED_SCHEMA_NOT_FOUND).increment(1);
-      if (!skipSchemaErrors) {
-        throw new IOException(e);
-      }
     } catch (Exception e) {
       mapperContext.getCounter(KAFKA_MSG.SKIPPED_OTHER).increment(1);
       if (!skipSchemaErrors) {

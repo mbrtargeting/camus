@@ -3,10 +3,8 @@ apply plugin: 'li-java'
 dependencies {
 		
 	compile(project(":camus-external:camus-api"))
-	compile(project(":camus-external:camus-schema-registry-avro"))
 
 	compile spec.external.log4j
-	compile spec.external.avro
 	compile spec.external.jodaTime
 	compile spec.external.kafka
 	compile spec.external.scalaLibrary

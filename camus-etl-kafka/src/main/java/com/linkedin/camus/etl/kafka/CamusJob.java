@@ -382,7 +382,7 @@ public class CamusJob extends Configured implements Tool {
     // Send Tracking counts to Kafka
     String etlCountsClassName = props.getProperty(ETL_COUNTS_CLASS, ETL_COUNTS_CLASS_DEFAULT);
     Class<? extends EtlCounts> etlCountsClass = (Class<? extends EtlCounts>) Class.forName(etlCountsClassName);
-    sendTrackingCounts(job, fs, newExecutionOutput, etlCountsClass);
+    moveTrackingCounts(job, fs, newExecutionOutput);
 
     log.info("Job finished");
     stopTiming("commit");
@@ -610,10 +610,10 @@ public class CamusJob extends Configured implements Tool {
   }
 
   // Posts the tracking counts to Kafka
-  public void sendTrackingCounts(JobContext job, FileSystem fs, Path newExecutionOutput,
-      Class<? extends EtlCounts> etlCountsClass) throws IOException, URISyntaxException, IllegalArgumentException,
-      SecurityException, InstantiationException, IllegalAccessException, InvocationTargetException,
-      NoSuchMethodException {
+  public void moveTrackingCounts(JobContext job, FileSystem fs, Path newExecutionOutput)
+      throws IOException, URISyntaxException, IllegalArgumentException, SecurityException,
+             InstantiationException, IllegalAccessException, InvocationTargetException,
+             NoSuchMethodException {
     if (EtlMultiOutputFormat.isRunTrackingPost(job)) {
       FileStatus[] gstatuses = fs.listStatus(newExecutionOutput, new PrefixFilter("counts"));
       HashMap<String, EtlCounts> allCounts = new HashMap<String, EtlCounts>();
@@ -666,13 +666,6 @@ public class CamusJob extends Configured implements Tool {
         } else {
           fs.delete(countFile.getPath(), true);
         }
-      }
-
-      String brokerList = getKafkaBrokers(job);
-      for (EtlCounts finalEtlCounts : allCounts.values()) {
-        EtlCounts finalCounts = etlCountsClass.getDeclaredConstructor(EtlCounts.class).newInstance(finalEtlCounts);
-        finalCounts.postTrackingCountToKafka(job.getConfiguration(), props.getProperty(KAFKA_MONITOR_TIER),
-            brokerList);
       }
     }
   }
