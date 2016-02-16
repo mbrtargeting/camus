@@ -22,16 +22,36 @@
       <artifactId>camus-kafka-coders</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
+    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.11</artifactId>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.github.sgroschupf</groupId>
-      <artifactId>zkclient</artifactId>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.11</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
@@ -46,10 +66,6 @@
           <artifactId>jline</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
     </dependency>
     <dependency>
       <groupId>commons-cli</groupId>
@@ -68,11 +84,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>commons-httpclient</groupId>
-      <artifactId>commons-httpclient</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>com.indeed</groupId>
       <artifactId>java-dogstatsd-client</artifactId>
       <version>2.0.8</version>
@@ -88,6 +99,17 @@
       <version>1.6</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>15.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
   </dependencies>
 
 </project>
