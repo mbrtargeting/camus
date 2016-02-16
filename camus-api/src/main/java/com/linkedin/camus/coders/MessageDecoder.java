@@ -4,8 +4,8 @@ import java.util.Properties;
 
 /**
  * Decoder interface. Implementations should return a CamusWrapper with timestamp
- * set at the very least.  Camus will instantiate a descendent of this class
- * based on the property ccamus.message.decoder.class.
+ * set at the very least.  Camus will instantiate a descendant of this class
+ * based on the property camus.message.decoder.class.
  *
  * @param <M> The message type to be decoded
  * @param <R> The type of the decoded message

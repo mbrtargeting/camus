@@ -65,7 +65,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     private static EtlMultiOutputCommitter committer = null;
     private static Map<String, Partitioner>
             partitionersByTopic
-            = new HashMap<String, Partitioner>();
+            = new HashMap<>();
 
     private static Logger log = Logger.getLogger(EtlMultiOutputFormat.class);
 
@@ -77,8 +77,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
     public static Class<RecordWriterProvider> getRecordWriterProviderClass(JobContext job) {
         return (Class<RecordWriterProvider>) job.getConfiguration()
-                .getClass(ETL_RECORD_WRITER_PROVIDER_CLASS,
-                          StringRecordWriterProvider.class);
+                .getClass(ETL_RECORD_WRITER_PROVIDER_CLASS, StringRecordWriterProvider.class);
     }
 
     public static RecordWriterProvider getRecordWriterProvider(JobContext job) {
@@ -191,7 +190,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public static Partitioner getPartitioner(JobContext job, String topicName) throws IOException {
         String customPartitionerProperty = ETL_DEFAULT_PARTITIONER_CLASS + "." + topicName;
         if (partitionersByTopic.get(customPartitionerProperty) == null) {
-            List<Partitioner> partitioners = new ArrayList<Partitioner>();
+            List<Partitioner> partitioners = new ArrayList<>();
             if (partitioners.isEmpty()) {
                 return getDefaultPartitioner(job);
             } else {
@@ -202,7 +201,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     }
 
     public static void resetPartitioners() {
-        partitionersByTopic = new HashMap<String, Partitioner>();
+        partitionersByTopic = new HashMap<>();
     }
 
     @Override

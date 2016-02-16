@@ -48,7 +48,7 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
         isCompressed = FileOutputFormat.getCompressOutput(context);
 
         if (isCompressed) {
-            Class<? extends CompressionCodec> codecClass = null;
+            Class<? extends CompressionCodec> codecClass;
             if ("snappy".equals(EtlMultiOutputFormat.getEtlOutputCodec(context))) {
                 codecClass = SnappyCodec.class;
             } else if ("gzip".equals((EtlMultiOutputFormat.getEtlOutputCodec(context)))) {
@@ -132,7 +132,7 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
         public void write(IEtlKey ignore, CamusWrapper value) throws IOException {
             boolean nullValue = value == null;
             if (!nullValue) {
-                String record = (String) value.getRecord() + recordDelimiter;
+                String record = value.getRecord() + recordDelimiter;
                 out.write(record.getBytes());
             }
         }

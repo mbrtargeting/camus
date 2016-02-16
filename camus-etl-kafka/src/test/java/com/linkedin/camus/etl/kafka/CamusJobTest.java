@@ -73,7 +73,7 @@ public class CamusJobTest {
         gson = new Gson();
 
         // You can't delete messages in Kafka so just writing a set of known messages that can be used for testing
-        messagesWritten = new HashMap<String, List<Message>>();
+        messagesWritten = new HashMap<>();
         messagesWritten.put(TOPIC_1, writeKafka(TOPIC_1, 10));
         messagesWritten.put(TOPIC_2, writeKafka(TOPIC_2, 10));
         messagesWritten.put(TOPIC_3, writeKafka(TOPIC_3, 10));
@@ -86,16 +86,15 @@ public class CamusJobTest {
 
     private static List<Message> writeKafka(String topic, int numOfMessages) {
 
-        List<Message> messages = new ArrayList<Message>();
+        List<Message> messages = new ArrayList<>();
         List<KeyedMessage<String, String>>
                 kafkaMessages
-                = new ArrayList<KeyedMessage<String, String>>();
+                = new ArrayList<>();
 
         for (int i = 0; i < numOfMessages; i++) {
             Message msg = new Message(RANDOM.nextInt());
             messages.add(msg);
-            kafkaMessages.add(new KeyedMessage<String, String>(topic, Integer.toString(i),
-                                                               gson.toJson(msg)));
+            kafkaMessages.add(new KeyedMessage<>(topic, Integer.toString(i), gson.toJson(msg)));
         }
 
         Properties producerProps = cluster.getProps();
@@ -103,7 +102,7 @@ public class CamusJobTest {
         producerProps.setProperty("serializer.class", StringEncoder.class.getName());
         producerProps.setProperty("key.serializer.class", StringEncoder.class.getName());
 
-        Producer<String, String> producer = new Producer<String, String>(
+        Producer<String, String> producer = new Producer<>(
                 new ProducerConfig(producerProps));
 
         try {
@@ -225,7 +224,7 @@ public class CamusJobTest {
 
     private List<Message> readMessages(Path path)
             throws IOException, InstantiationException, IllegalAccessException {
-        List<Message> messages = new ArrayList<Message>();
+        List<Message> messages = new ArrayList<>();
 
         try {
             for (FileStatus file : fs.listStatus(path)) {

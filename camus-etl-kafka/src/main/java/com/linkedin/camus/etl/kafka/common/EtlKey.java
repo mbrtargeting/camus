@@ -268,7 +268,7 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
         builder.append(time);
 
         for (Map.Entry<Writable, Writable> e : partitionMap.entrySet()) {
-            builder.append(" " + e.getKey() + "=");
+            builder.append(" ").append(e.getKey()).append("=");
             builder.append(e.getValue().toString());
         }
 
@@ -286,38 +286,16 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
 
         EtlKey etlKey = (EtlKey) o;
 
-        if (beginOffset != etlKey.beginOffset) {
-            return false;
-        }
-        if (checksum != etlKey.checksum) {
-            return false;
-        }
-        if (offset != etlKey.offset) {
-            return false;
-        }
-        if (partition != etlKey.partition) {
-            return false;
-        }
-        if (time != etlKey.time) {
-            return false;
-        }
-        if (!leaderId.equals(etlKey.leaderId)) {
-            return false;
-        }
-        if (!partitionMap.equals(etlKey.partitionMap)) {
-            return false;
-        }
-        if (!server.equals(etlKey.server)) {
-            return false;
-        }
-        if (!service.equals(etlKey.service)) {
-            return false;
-        }
-        if (!topic.equals(etlKey.topic)) {
-            return false;
-        }
-
-        return true;
+        return beginOffset == etlKey.beginOffset
+               && checksum == etlKey.checksum
+               && offset == etlKey.offset
+               && partition == etlKey.partition
+               && time == etlKey.time
+               && leaderId.equals(etlKey.leaderId)
+               && partitionMap.equals(etlKey.partitionMap)
+               && server.equals(etlKey.server)
+               && service.equals(etlKey.service)
+               && topic.equals(etlKey.topic);
     }
 
     @Override

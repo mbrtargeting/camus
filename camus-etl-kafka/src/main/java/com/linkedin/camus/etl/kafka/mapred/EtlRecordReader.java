@@ -24,6 +24,7 @@ import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 
 
@@ -35,9 +36,6 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     private static final int RECORDS_TO_READ_AFTER_TIMEOUT = 5;
     private static Logger log = Logger.getLogger(EtlRecordReader.class);
 
-    ;
-    private final BytesWritable msgValue = new BytesWritable();
-    private final BytesWritable msgKey = new BytesWritable();
     private final EtlKey key = new EtlKey();
     protected TaskAttemptContext context;
     EtlSplit split;
@@ -126,11 +124,9 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
             this.maxPullTime = Long.MAX_VALUE;
         }
 
-        ignoreServerServiceList = new HashSet<String>();
-        for (String ignoreServerServiceTopic : EtlInputFormat
-                .getEtlAuditIgnoreServiceTopicList(context)) {
-            ignoreServerServiceList.add(ignoreServerServiceTopic);
-        }
+        ignoreServerServiceList = new HashSet<>();
+        Collections.addAll(ignoreServerServiceList, EtlInputFormat
+                .getEtlAuditIgnoreServiceTopicList(context));
 
         this.totalBytes = this.split.getLength();
 
@@ -399,7 +395,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         }
     }
 
-    public static enum KAFKA_MSG {
+    public enum KAFKA_MSG {
         DECODE_SUCCESSFUL,
         SKIPPED_SCHEMA_NOT_FOUND,
         SKIPPED_OTHER

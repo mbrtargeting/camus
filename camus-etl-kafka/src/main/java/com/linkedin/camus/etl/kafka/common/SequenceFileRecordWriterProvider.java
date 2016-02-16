@@ -99,7 +99,7 @@ public class SequenceFileRecordWriterProvider implements RecordWriterProvider {
             @Override
             public void write(IEtlKey key, CamusWrapper data)
                     throws IOException, InterruptedException {
-                String record = (String) data.getRecord() + recordDelimiter;
+                String record = data.getRecord() + recordDelimiter;
                 // Use the timestamp from the EtlKey as the key for this record.
                 // TODO: Is there a better key to use here?
                 writer.append(new LongWritable(key.getTime()), new Text(record));

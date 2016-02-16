@@ -200,17 +200,9 @@ public class EtlRequest implements CamusRequest {
         if (!(o instanceof EtlRequest)) {
             return false;
         }
-
         EtlRequest that = (EtlRequest) o;
+        return partition == that.partition && topic.equals(that.topic);
 
-        if (partition != that.partition) {
-            return false;
-        }
-        if (!topic.equals(that.topic)) {
-            return false;
-        }
-
-        return true;
     }
 
     @Override
@@ -238,7 +230,7 @@ public class EtlRequest implements CamusRequest {
             SimpleConsumer consumer = new SimpleConsumer(uri.getHost(), uri.getPort(), 60000,
                                                          1024 * 1024, "hadoop-etl");
             Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetInfo =
-                    new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
+                    new HashMap<>();
             offsetInfo.put(new TopicAndPartition(topic, partition),
                            new PartitionOffsetRequestInfo(kafka.api.OffsetRequest.EarliestTime(),
                                                           1));
@@ -283,7 +275,7 @@ public class EtlRequest implements CamusRequest {
         SimpleConsumer consumer = new SimpleConsumer(uri.getHost(), uri.getPort(), 60000,
                                                      1024 * 1024, "hadoop-etl");
         Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetInfo =
-                new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
+                new HashMap<>();
         offsetInfo.put(new TopicAndPartition(topic, partition),
                        new PartitionOffsetRequestInfo(time, 1));
         OffsetResponse response =

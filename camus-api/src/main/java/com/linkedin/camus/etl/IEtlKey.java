@@ -13,8 +13,6 @@ public interface IEtlKey {
 
     String getTopic();
 
-    //String getNodeId();
-
     int getPartition();
 
     long getBeginOffset();

@@ -30,9 +30,9 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
 
     private final RecordWriterProvider recordWriterProvider;
     private Pattern workingFileMetadataPattern;
-    private HashMap<String, EtlCounts> counts = new HashMap<String, EtlCounts>();
-    private HashMap<String, EtlKey> offsets = new HashMap<String, EtlKey>();
-    private HashMap<String, Long> eventCounts = new HashMap<String, Long>();
+    private HashMap<String, EtlCounts> counts = new HashMap<>();
+    private HashMap<String, EtlKey> offsets = new HashMap<>();
+    private HashMap<String, Long> eventCounts = new HashMap<>();
     private TaskAttemptContext context;
     private Logger log;
 
@@ -83,7 +83,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
             offsetKey.setMessageSize(avgSize);
             offsetKey.setTotalMessageSize(totalSize);
         } else {
-            eventCounts.put(topicPart, 0l);
+            eventCounts.put(topicPart, 0L);
         }
         eventCounts.put(topicPart, eventCounts.get(topicPart) + 1);
         offsets.put(topicPart, offsetKey);
@@ -92,7 +92,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
     @Override
     public void commitTask(TaskAttemptContext context) throws IOException {
 
-        ArrayList<Map<String, Object>> allCountObject = new ArrayList<Map<String, Object>>();
+        ArrayList<Map<String, Object>> allCountObject = new ArrayList<>();
         FileSystem fs = FileSystem.get(context.getConfiguration());
         if (EtlMultiOutputFormat.isRunMoveData(context)) {
             Path workPath = super.getWorkPath();
@@ -147,15 +147,15 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
             log.info("Not moving run data.");
         }
 
-        SequenceFile.Writer offsetWriter = SequenceFile.createWriter(fs, context.getConfiguration(),
-                                                                     new Path(super.getWorkPath(),
-                                                                              EtlMultiOutputFormat
-                                                                                      .getUniqueFile(
-                                                                                              context,
-                                                                                              EtlMultiOutputFormat.OFFSET_PREFIX,
-                                                                                              "")),
-                                                                     EtlKey.class,
-                                                                     NullWritable.class);
+        SequenceFile.Writer offsetWriter =
+                SequenceFile.createWriter(fs, context.getConfiguration(),
+                                          new Path(super.getWorkPath(),
+                                                   EtlMultiOutputFormat.getUniqueFile(
+                                                           context,
+                                                           EtlMultiOutputFormat.OFFSET_PREFIX,
+                                                           "")),
+                                          EtlKey.class,
+                                          NullWritable.class);
         for (String s : offsets.keySet()) {
             log.info("Avg record size for " + offsets.get(s).getTopic() + ":" + offsets.get(s)
                     .getPartition() + " = "

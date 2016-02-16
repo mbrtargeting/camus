@@ -27,7 +27,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
     public List<InputSplit> allocateWork(List<CamusRequest> requests, JobContext context)
             throws IOException {
         int numTasks = context.getConfiguration().getInt("mapred.map.tasks", 30);
-        List<InputSplit> kafkaETLSplits = new ArrayList<InputSplit>();
+        List<InputSplit> kafkaETLSplits = new ArrayList<>();
 
         for (int i = 0; i < numTasks; i++) {
             if (requests.size() > 0) {
@@ -50,11 +50,11 @@ public class TopicGroupingAllocator extends BaseAllocator {
     }
 
     private List<CamusRequest> groupSmallRequest(List<CamusRequest> requests, JobContext context) {
-        List<CamusRequest> finalRequests = new ArrayList<CamusRequest>();
+        List<CamusRequest> finalRequests = new ArrayList<>();
 
         Map<String, List<CamusRequest>>
                 requestsTopicMap
-                = new HashMap<String, List<CamusRequest>>();
+                = new HashMap<>();
         long totalEstimatedDataSize = 0;
 
         for (CamusRequest cr : requests) {
@@ -71,7 +71,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
 
         for (List<CamusRequest> topic : requestsTopicMap.values()) {
             long size = 0;
-            List<CamusRequest> groupedRequests = new ArrayList<CamusRequest>();
+            List<CamusRequest> groupedRequests = new ArrayList<>();
 
             for (CamusRequest cr : topic) {
                 if (size + cr.estimateDataSize() >= maxSize) {
@@ -79,7 +79,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
                         finalRequests.add(new GroupedRequest(groupedRequests));
                     }
 
-                    groupedRequests = new ArrayList<CamusRequest>();
+                    groupedRequests = new ArrayList<>();
                     size = 0;
                 }
 
@@ -103,7 +103,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
 
         @Override
         public void readFields(DataInput arg0) throws IOException {
-            requests = new ArrayList<CamusRequest>();
+            requests = new ArrayList<>();
             int size = arg0.readInt();
             for (int i = 0; i < size; i++) {
 

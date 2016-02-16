@@ -222,14 +222,13 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     }
 
     public static Class<MessageDecoder> getMessageDecoderClass(JobContext job) {
-        return (Class<MessageDecoder>) job.getConfiguration().getClass(CAMUS_MESSAGE_DECODER_CLASS,
-                                                                       JsonStringMessageDecoder.class);
+        return (Class<MessageDecoder>) job.getConfiguration()
+                .getClass(CAMUS_MESSAGE_DECODER_CLASS, JsonStringMessageDecoder.class);
     }
 
     public static Class<MessageDecoder> getMessageDecoderClass(JobContext job, String topicName) {
-        Class<MessageDecoder> topicDecoder =
-                (Class<MessageDecoder>) job.getConfiguration()
-                        .getClass(CAMUS_MESSAGE_DECODER_CLASS + "." + topicName, null);
+        Class<MessageDecoder> topicDecoder = (Class<MessageDecoder>) job.getConfiguration()
+                .getClass(CAMUS_MESSAGE_DECODER_CLASS + "." + topicName, null);
         return topicDecoder == null ? getMessageDecoderClass(job) : topicDecoder;
     }
 
@@ -308,11 +307,9 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     }
 
     public SimpleConsumer createSimpleConsumer(JobContext context, String host, int port) {
-        SimpleConsumer consumer =
-                new SimpleConsumer(host, port, CamusJob.getKafkaTimeoutValue(context),
-                                   CamusJob.getKafkaBufferSize(context),
-                                   CamusJob.getKafkaClientName(context));
-        return consumer;
+        return new SimpleConsumer(host, port, CamusJob.getKafkaTimeoutValue(context),
+                          CamusJob.getKafkaBufferSize(context),
+                          CamusJob.getKafkaClientName(context));
     }
 
     /**
@@ -320,7 +317,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
      */
     public ArrayList<CamusRequest> fetchLatestOffsetAndCreateEtlRequests(JobContext context,
                                                                          HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo) {
-        ArrayList<CamusRequest> finalRequests = new ArrayList<CamusRequest>();
+        ArrayList<CamusRequest> finalRequests = new ArrayList<>();
         for (LeaderInfo leader : offsetRequestInfo.keySet()) {
             SimpleConsumer consumer = createSimpleConsumer(context, leader.getUri().getHost(),
                                                            leader.getUri().getPort());
@@ -330,10 +327,8 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
             // Earliest Offset
             PartitionOffsetRequestInfo partitionEarliestOffsetRequestInfo =
                     new PartitionOffsetRequestInfo(kafka.api.OffsetRequest.EarliestTime(), 1);
-            Map<TopicAndPartition, PartitionOffsetRequestInfo> latestOffsetInfo =
-                    new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
-            Map<TopicAndPartition, PartitionOffsetRequestInfo> earliestOffsetInfo =
-                    new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
+            Map<TopicAndPartition, PartitionOffsetRequestInfo> latestOffsetInfo = new HashMap<>();
+            Map<TopicAndPartition, PartitionOffsetRequestInfo> earliestOffsetInfo = new HashMap<>();
             ArrayList<TopicAndPartition> topicAndPartitions = offsetRequestInfo.get(leader);
             for (TopicAndPartition topicAndPartition : topicAndPartitions) {
                 latestOffsetInfo.put(topicAndPartition, partitionLatestOffsetRequestInfo);
@@ -414,17 +409,16 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
             Map<TopicAndPartition, PartitionOffsetRequestInfo> offsetInfo,
             SimpleConsumer consumer) {
         StringBuilder sb = new StringBuilder();
-        sb.append(
-                "The following topics will be skipped due to failure in fetching latest offsets from leader "
-                + consumer.host() + ":" + consumer.port());
+        sb.append("The following topics will be skipped due to failure in fetching latest offsets from leader ")
+                .append(consumer.host()).append(":").append(consumer.port());
         for (TopicAndPartition topicAndPartition : offsetInfo.keySet()) {
-            sb.append("  " + topicAndPartition.topic());
+            sb.append("  ").append(topicAndPartition.topic());
         }
         return sb.toString();
     }
 
     public String createTopicRegEx(HashSet<String> topicsSet) {
-        String regex = "";
+        String regex;
         StringBuilder stringbuilder = new StringBuilder();
         for (String whiteList : topicsSet) {
             stringbuilder.append(whiteList);
@@ -437,7 +431,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
     public List<TopicMetadata> filterWhitelistTopics(List<TopicMetadata> topicMetadataList,
                                                      HashSet<String> whiteListTopics) {
-        ArrayList<TopicMetadata> filteredTopics = new ArrayList<TopicMetadata>();
+        ArrayList<TopicMetadata> filteredTopics = new ArrayList<>();
         String regex = createTopicRegEx(whiteListTopics);
         for (TopicMetadata topicMetadata : topicMetadataList) {
             if (Pattern.matches(regex, topicMetadata.topic())) {
@@ -454,7 +448,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         CamusJob.startTiming("getSplits");
         ArrayList<CamusRequest> finalRequests;
         HashMap<LeaderInfo, ArrayList<TopicAndPartition>> offsetRequestInfo =
-                new HashMap<LeaderInfo, ArrayList<TopicAndPartition>>();
+                new HashMap<>();
         try {
 
             // Get Metadata for all topics
@@ -462,14 +456,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
                                                                      new ArrayList<String>());
 
             // Filter any white list topics
-            HashSet<String> whiteListTopics = new HashSet<String>(
+            HashSet<String> whiteListTopics = new HashSet<>(
                     Arrays.asList(getKafkaWhitelistTopic(context)));
             if (!whiteListTopics.isEmpty()) {
                 topicMetadataList = filterWhitelistTopics(topicMetadataList, whiteListTopics);
             }
 
             // Filter all blacklist topics
-            HashSet<String> blackListTopics = new HashSet<String>(
+            HashSet<String> blackListTopics = new HashSet<>(
                     Arrays.asList(getKafkaBlacklistTopic(context)));
             String regex = "";
             if (!blackListTopics.isEmpty()) {
@@ -526,7 +520,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
                             } else {
                                 ArrayList<TopicAndPartition>
                                         topicAndPartitions
-                                        = new ArrayList<TopicAndPartition>();
+                                        = new ArrayList<>();
                                 topicAndPartitions.add(new TopicAndPartition(topicMetadata.topic(),
                                                                              partitionMetadata
                                                                                      .partitionId()));
@@ -643,14 +637,12 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     }
 
     private Set<String> getMoveToLatestTopicsSet(JobContext context) {
-        Set<String> topics = new HashSet<String>();
+        Set<String> topics = new HashSet<>();
 
         String[] arr = getMoveToLatestTopics(context);
 
         if (arr != null) {
-            for (String topic : arr) {
-                topics.add(topic);
-            }
+            Collections.addAll(topics, arr);
         }
 
         return topics;
@@ -710,7 +702,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
 
     private Map<CamusRequest, EtlKey> getPreviousOffsets(Path[] inputs, JobContext context)
             throws IOException {
-        Map<CamusRequest, EtlKey> offsetKeysMap = new HashMap<CamusRequest, EtlKey>();
+        Map<CamusRequest, EtlKey> offsetKeysMap = new HashMap<>();
         for (Path input : inputs) {
             FileSystem fs = input.getFileSystem(context.getConfiguration());
             for (FileStatus f : fs.listStatus(input, new OffsetFileFilter())) {

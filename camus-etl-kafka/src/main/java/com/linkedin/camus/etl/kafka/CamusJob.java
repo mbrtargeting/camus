@@ -88,8 +88,7 @@ public class CamusJob extends Configured implements Tool {
     public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
     public static final String ETL_COUNTS_PATH = "etl.counts.path";
     public static final String ETL_COUNTS_CLASS = "etl.counts.class";
-    public static final String
-            ETL_COUNTS_CLASS_DEFAULT
+    public static final String ETL_COUNTS_CLASS_DEFAULT
             = "com.linkedin.camus.etl.kafka.common.EtlCounts";
     public static final String ETL_KEEP_COUNT_FILES = "etl.keep.count.files";
     public static final String ETL_BASEDIR_QUOTA_OVERIDE = "etl.basedir.quota.overide";
@@ -130,7 +129,7 @@ public class CamusJob extends Configured implements Tool {
     public static final String LOG4J_CONFIGURATION = "log4j.configuration";
 
     private static org.apache.log4j.Logger log;
-    private static HashMap<String, Long> timingMap = new HashMap<String, Long>();
+    private static HashMap<String, Long> timingMap = new HashMap<>();
     private final Properties props;
     private Job hadoopJob = null;
     private DateTimeFormatter dateFmt = DateUtils
@@ -146,7 +145,7 @@ public class CamusJob extends Configured implements Tool {
 
     public CamusJob(Properties props, Logger log) throws IOException {
         this.props = props;
-        this.log = log;
+        CamusJob.log = log;
     }
 
     public static void startTiming(String name) {
@@ -174,30 +173,30 @@ public class CamusJob extends Configured implements Tool {
 
         String hadoopCacheJarDir = conf.get("hdfs.default.classpath.dir", null);
 
-        List<Pattern> jarFilterString = new ArrayList<Pattern>();
+        List<Pattern> jarFilterString = new ArrayList<>();
 
         for (String str : Arrays.asList(conf.getStrings("cache.jar.filter.list", new String[0]))) {
             jarFilterString.add(Pattern.compile(str));
         }
 
         if (hadoopCacheJarDir != null) {
-            FileStatus[] status = fs.listStatus(new Path(hadoopCacheJarDir));
+            FileStatus[] files = fs.listStatus(new Path(hadoopCacheJarDir));
 
-            if (status != null) {
-                for (int i = 0; i < status.length; ++i) {
-                    if (!status[i].isDir()) {
-                        log.info("Adding Jar to Distributed Cache Archive File:" + status[i]
+            if (files != null) {
+                for (FileStatus file : files) {
+                    if (!file.isDir()) {
+                        log.info("Adding Jar to Distributed Cache Archive File:" + file
                                 .getPath());
                         boolean filterMatch = false;
                         for (Pattern p : jarFilterString) {
-                            if (p.matcher(status[i].getPath().getName()).matches()) {
+                            if (p.matcher(file.getPath().getName()).matches()) {
                                 filterMatch = true;
                                 break;
                             }
                         }
 
                         if (!filterMatch) {
-                            DistributedCache.addFileToClassPath(status[i].getPath(), conf, fs);
+                            DistributedCache.addFileToClassPath(file.getPath(), conf, fs);
                         }
                     }
                 }
@@ -231,11 +230,6 @@ public class CamusJob extends Configured implements Tool {
     public static void main(String[] args) throws Exception {
         CamusJob job = new CamusJob();
         ToolRunner.run(job, args);
-    }
-
-    // Temporarily adding all Kafka parameters here
-    public static boolean getPostTrackingCountsToKafka(Job job) {
-        return job.getConfiguration().getBoolean(POST_TRACKING_COUNTS_TO_KAFKA, true);
     }
 
     public static int getKafkaFetchRequestMinBytes(JobContext context) {
@@ -273,8 +267,7 @@ public class CamusJob extends Configured implements Tool {
     }
 
     public static int getKafkaTimeoutValue(JobContext job) {
-        int timeOut = job.getConfiguration().getInt(KAFKA_TIMEOUT_VALUE, 30000);
-        return timeOut;
+        return job.getConfiguration().getInt(KAFKA_TIMEOUT_VALUE, 30000);
     }
 
     public static int getKafkaBufferSize(JobContext job) {
@@ -466,9 +459,6 @@ public class CamusJob extends Configured implements Tool {
         checkIfTooManySkippedMsg(counters);
 
         // Send Tracking counts to Kafka
-        String etlCountsClassName = props.getProperty(ETL_COUNTS_CLASS, ETL_COUNTS_CLASS_DEFAULT);
-        Class<? extends EtlCounts> etlCountsClass = (Class<? extends EtlCounts>) Class
-                .forName(etlCountsClassName);
         moveTrackingCounts(job, fs, newExecutionOutput);
 
         log.info("Job finished");
@@ -664,23 +654,23 @@ public class CamusJob extends Configured implements Tool {
 
             final List<Pair<EtlKey, ExceptionWritable>>
                     errorsFromFile
-                    = Lists.<Pair<EtlKey, ExceptionWritable>>newArrayList();
+                    = Lists.newArrayList();
 
             while (reader.next(key, value)) {
                 errorCounter++;
 
                 if (errorCounter <= maxErrorsFromFile) {
                     errorsFromFile.add(
-                            new Pair<EtlKey, ExceptionWritable>(new EtlKey(key),
-                                                                new ExceptionWritable(
-                                                                        value.toString())));
+                            new Pair<>(new EtlKey(key),
+                                       new ExceptionWritable(
+                                               value.toString())));
                 }
             }
 
             if (errorCounter > 0) {
                 if (errorCounter > maxErrorsFromFile) {
                     errorsFromFile.add(
-                            new Pair<EtlKey, ExceptionWritable>(
+                            new Pair<>(
                                     new EtlKey(key),
                                     new ExceptionWritable("... Too many errors to show. " +
                                                           "Skipped " + (errorCounter
@@ -731,13 +721,13 @@ public class CamusJob extends Configured implements Tool {
                    NoSuchMethodException {
         if (EtlMultiOutputFormat.isRunTrackingPost(job)) {
             FileStatus[] gstatuses = fs.listStatus(newExecutionOutput, new PrefixFilter("counts"));
-            HashMap<String, EtlCounts> allCounts = new HashMap<String, EtlCounts>();
+            HashMap<String, EtlCounts> allCounts = new HashMap<>();
             for (FileStatus gfileStatus : gstatuses) {
                 FSDataInputStream fdsis = fs.open(gfileStatus.getPath());
 
                 BufferedReader br = new BufferedReader(new InputStreamReader(fdsis), 1048576);
-                StringBuffer buffer = new StringBuffer();
-                String temp = "";
+                StringBuilder buffer = new StringBuilder();
+                String temp;
                 while ((temp = br.readLine()) != null) {
                     buffer.append(temp);
                 }

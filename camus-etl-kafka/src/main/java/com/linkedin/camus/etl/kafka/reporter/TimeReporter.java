@@ -31,17 +31,13 @@ public class TimeReporter extends BaseReporter {
         double total = timingMap.get("total") / 1000;
 
         sb.append(String.format("    %12s %6.1f (%s)\n", "pre setup", preSetup,
-                                NumberFormat.getPercentInstance().format(preSetup / total)
-                                        .toString()));
+                                NumberFormat.getPercentInstance().format(preSetup / total)));
         sb.append(String.format("    %12s %6.1f (%s)\n", "get splits", getSplits,
-                                NumberFormat.getPercentInstance().format(getSplits / total)
-                                        .toString()));
+                                NumberFormat.getPercentInstance().format(getSplits / total)));
         sb.append(String.format("    %12s %6.1f (%s)\n", "hadoop job", hadoop,
-                                NumberFormat.getPercentInstance().format(hadoop / total)
-                                        .toString()));
+                                NumberFormat.getPercentInstance().format(hadoop / total)));
         sb.append(String.format("    %12s %6.1f (%s)\n", "commit", commit,
-                                NumberFormat.getPercentInstance().format(commit / total)
-                                        .toString()));
+                                NumberFormat.getPercentInstance().format(commit / total)));
 
         int minutes = (int) total / 60;
         int seconds = (int) total % 60;
@@ -55,7 +51,7 @@ public class TimeReporter extends BaseReporter {
         double min = Long.MAX_VALUE, max = 0, mean = 0;
         double minRun = Long.MAX_VALUE, maxRun = 0, meanRun = 0;
         long totalTaskTime = 0;
-        TreeMap<Long, List<TaskReport>> taskMap = new TreeMap<Long, List<TaskReport>>();
+        TreeMap<Long, List<TaskReport>> taskMap = new TreeMap<>();
 
         for (TaskReport t : tasks) {
             long wait = t.getStartTime() - timingMap.get("hadoop_start");

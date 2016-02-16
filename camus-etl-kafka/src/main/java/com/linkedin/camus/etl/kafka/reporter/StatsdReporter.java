@@ -18,9 +18,6 @@ public class StatsdReporter extends TimeReporter {
     public static final String STATSD_HOST = "statsd.host";
     public static final String STATSD_PORT = "statsd.port";
 
-    private static boolean statsdEnabled;
-    private static StatsDClient statsd;
-
     public static Boolean getStatsdEnabled(Job job) {
         return job.getConfiguration().getBoolean(STATSD_ENABLED, false);
     }

@@ -27,7 +27,7 @@ public class EtlRecordReaderForUnitTest extends EtlRecordReader {
         EasyMock.expect(mockDecoder.decode(EasyMock.anyObject())).andThrow(new IOException())
                 .times(3);
         EasyMock.expect(mockDecoder.decode(EasyMock.anyObject()))
-                .andReturn(new CamusWrapper<String>("dummy")).times(7);
+                .andReturn(new CamusWrapper<>("dummy")).times(7);
         EasyMock.replay(mockDecoder);
         return mockDecoder;
     }
@@ -37,7 +37,7 @@ public class EtlRecordReaderForUnitTest extends EtlRecordReader {
         EasyMock.expect(mockDecoder.decode(EasyMock.anyObject())).andThrow(new RuntimeException())
                 .times(3);
         EasyMock.expect(mockDecoder.decode(EasyMock.anyObject()))
-                .andReturn(new CamusWrapper<String>("dummy")).times(7);
+                .andReturn(new CamusWrapper<>("dummy")).times(7);
         EasyMock.replay(mockDecoder);
         return mockDecoder;
     }
@@ -60,7 +60,7 @@ public class EtlRecordReaderForUnitTest extends EtlRecordReader {
         }
     }
 
-    public static enum DecoderType {
+    public enum DecoderType {
         REGULAR,
         SCHEMA_NOT_FOUND_30_PERCENT,
         OTHER_30_PERCENT;

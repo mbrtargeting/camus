@@ -87,42 +87,47 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
             // If timestampFormat is 'unix_seconds',
             // then the timestamp only needs converted to milliseconds.
             // Also support 'unix' for backwards compatibility.
-            if (timestampFormat.equals("unix_seconds") || timestampFormat.equals("unix")) {
-                timestamp = jsonObject.get(timestampField).getAsLong();
-                // This timestamp is in seconds, convert it to milliseconds.
-                timestamp = timestamp * 1000L;
-            }
-            // Else if this timestamp is already in milliseconds,
-            // just save it as is.
-            else if (timestampFormat.equals("unix_milliseconds")) {
-                timestamp = jsonObject.get(timestampField).getAsLong();
-            }
-            // Else if timestampFormat is 'ISO-8601', parse that
-            else if (timestampFormat.equals("ISO-8601")) {
-                String timestampString = jsonObject.get(timestampField).getAsString();
-                try {
-                    timestamp = new DateTime(timestampString).getMillis();
-                } catch (IllegalArgumentException e) {
-                    log.error("Could not parse timestamp '" + timestampString
-                              + "' as ISO-8601 while decoding JSON message.");
-                }
-            }
-            // Otherwise parse the timestamp as a string in timestampFormat.
-            else {
-                String timestampString = jsonObject.get(timestampField).getAsString();
-                try {
-                    timestamp = dateTimeParser.parseDateTime(timestampString).getMillis();
-                } catch (IllegalArgumentException e) {
+            switch (timestampFormat) {
+                case "unix_seconds":
+                case "unix":
+                    timestamp = jsonObject.get(timestampField).getAsLong();
+                    // This timestamp is in seconds, convert it to milliseconds.
+                    timestamp = timestamp * 1000L;
+                    break;
+                // Else if this timestamp is already in milliseconds,
+                // just save it as is.
+                case "unix_milliseconds":
+                    timestamp = jsonObject.get(timestampField).getAsLong();
+                    break;
+                // Else if timestampFormat is 'ISO-8601', parse that
+                case "ISO-8601": {
+                    String timestampString = jsonObject.get(timestampField).getAsString();
                     try {
-                        timestamp = new SimpleDateFormat(timestampFormat).parse(timestampString)
-                                .getTime();
-                    } catch (ParseException pe) {
+                        timestamp = new DateTime(timestampString).getMillis();
+                    } catch (IllegalArgumentException e) {
+                        log.error("Could not parse timestamp '" + timestampString
+                                  + "' as ISO-8601 while decoding JSON message.");
+                    }
+                    break;
+                }
+                // Otherwise parse the timestamp as a string in timestampFormat.
+                default: {
+                    String timestampString = jsonObject.get(timestampField).getAsString();
+                    try {
+                        timestamp = dateTimeParser.parseDateTime(timestampString).getMillis();
+                    } catch (IllegalArgumentException e) {
+                        try {
+                            timestamp = new SimpleDateFormat(timestampFormat).parse(timestampString)
+                                    .getTime();
+                        } catch (ParseException pe) {
+                            log.error("Could not parse timestamp '" + timestampString
+                                      + "' while decoding JSON message.");
+                        }
+                    } catch (Exception ee) {
                         log.error("Could not parse timestamp '" + timestampString
                                   + "' while decoding JSON message.");
                     }
-                } catch (Exception ee) {
-                    log.error("Could not parse timestamp '" + timestampString
-                              + "' while decoding JSON message.");
+                    break;
                 }
             }
         }
@@ -135,6 +140,6 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
             timestamp = System.currentTimeMillis();
         }
 
-        return new CamusWrapper<String>(payloadString, timestamp);
+        return new CamusWrapper<>(payloadString, timestamp);
     }
 }

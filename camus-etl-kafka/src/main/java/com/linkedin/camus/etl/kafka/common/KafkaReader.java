@@ -240,7 +240,7 @@ public class KafkaReader {
             messageIter = messageBuffer.iterator();
             //boolean flag = false;
             Iterator<MessageAndOffset> messageIter2 = messageBuffer.iterator();
-            MessageAndOffset message = null;
+            MessageAndOffset message;
             while (messageIter2.hasNext()) {
                 message = messageIter2.next();
                 if (message.offset() < currentOffset) {
