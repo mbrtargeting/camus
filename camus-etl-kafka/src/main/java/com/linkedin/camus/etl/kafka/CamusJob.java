@@ -440,49 +440,49 @@ public class CamusJob extends Configured implements Tool {
         job.setNumReduceTasks(0);
 
         stopTiming("pre-setup");
-        job.submit();
-        job.waitForCompletion(true);
+        final Path newHistory = new Path(execHistory, executionDate);
+        try {
+            job.submit();
+            job.waitForCompletion(true);
 
-        // dump all counters
-        Counters counters = job.getCounters();
-        for (String groupName : counters.getGroupNames()) {
-            CounterGroup group = counters.getGroup(groupName);
-            log.info("Group: " + group.getDisplayName());
-            for (Counter counter : group) {
-                log.info(counter.getDisplayName() + ":\t" + counter.getValue());
+            // dump all counters
+            Counters counters = job.getCounters();
+            for (String groupName : counters.getGroupNames()) {
+                CounterGroup group = counters.getGroup(groupName);
+                log.info("Group: " + group.getDisplayName());
+                for (Counter counter : group) {
+                    log.info(counter.getDisplayName() + ":\t" + counter.getValue());
+                }
             }
-        }
 
-        stopTiming("hadoop");
-        startTiming("commit");
+            stopTiming("hadoop");
+            startTiming("commit");
 
-        checkIfTooManySkippedMsg(counters);
+            checkIfTooManySkippedMsg(counters);
 
-        // Send Tracking counts to Kafka
-        moveTrackingCounts(job, fs, newExecutionOutput);
+            // Send Tracking counts to Kafka
+            moveTrackingCounts(job, fs, newExecutionOutput);
 
-        log.info("Job finished");
-        stopTiming("commit");
-        stopTiming("total");
-        if (!job.isSuccessful()) {
-            JobClient client = new JobClient(new JobConf(job.getConfiguration()));
+            log.info("Job finished");
+            stopTiming("commit");
+            stopTiming("total");
+            if (!job.isSuccessful()) {
+                JobClient client = new JobClient(new JobConf(job.getConfiguration()));
 
-            TaskCompletionEvent[] tasks = job.getTaskCompletionEvents(0);
-            if (tasks.length > 0) {
-                for (TaskReport task : client
-                        .getMapTaskReports(tasks[0].getTaskAttemptId().getJobID())) {
-                    if (task.getCurrentStatus().equals(TIPStatus.FAILED)) {
-                        for (String s : task.getDiagnostics()) {
-                            System.err.println("task error: " + s);
+                TaskCompletionEvent[] tasks = job.getTaskCompletionEvents(0);
+                if (tasks.length > 0) {
+                    for (TaskReport task : client
+                            .getMapTaskReports(tasks[0].getTaskAttemptId().getJobID())) {
+                        if (task.getCurrentStatus().equals(TIPStatus.FAILED)) {
+                            for (String s : task.getDiagnostics()) {
+                                System.err.println("task error: " + s);
+                            }
                         }
                     }
                 }
+                throw new RuntimeException("hadoop job failed");
             }
-            throw new RuntimeException("hadoop job failed");
-        }
 
-        final Path newHistory = new Path(execHistory, executionDate);
-        try {
             // Go through all possible errors in output format and throw
             boolean hadExecutionErrors = checkExecutionErrors(fs, newExecutionOutput);
             if (hadExecutionErrors
