@@ -5,11 +5,9 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,33 +30,20 @@ public class EtlInputFormatTest {
     private static final String DUMMY_VALUE = "dummy:1234";
 
     @Test
-    public void testEmptyWhitelistBlacklistEntries() {
-        Configuration conf = new Configuration();
-        conf.set(EtlInputFormat.KAFKA_WHITELIST_TOPIC, ",TopicA,TopicB,,TopicC,");
-        conf.set(EtlInputFormat.KAFKA_BLACKLIST_TOPIC, ",TopicD,TopicE,,,,,TopicF,");
-
-        String[] whitelistTopics = EtlInputFormat.getKafkaWhitelistTopic(conf);
-        Assert.assertEquals(Arrays.asList("TopicA", "TopicB", "TopicC"),
-                            Arrays.asList(whitelistTopics));
-
-        String[] blacklistTopics = EtlInputFormat.getKafkaBlacklistTopic(conf);
-        Assert.assertEquals(Arrays.asList("TopicD", "TopicE", "TopicF"),
-                            Arrays.asList(blacklistTopics));
-    }
-
-    @Test
     public void testWithOneRetry() {
-        List<Object> mocks = new ArrayList<Object>();
+        List<Object> mocks = new ArrayList<>();
 
         Configuration configuration = EasyMock.createMock(Configuration.class);
         mocks.add(configuration);
         EasyMock.expect(configuration.get(EasyMock.anyString())).andReturn(DUMMY_VALUE).anyTimes();
+        EasyMock.expect(configuration.getStringCollection(EasyMock.anyString())).andReturn(
+                Collections.singletonList(DUMMY_VALUE)).anyTimes();
 
         JobContext jobContext = EasyMock.createMock(JobContext.class);
         mocks.add(jobContext);
         EasyMock.expect(jobContext.getConfiguration()).andReturn(configuration).anyTimes();
 
-        List<TopicMetadata> topicMetadatas = new ArrayList<TopicMetadata>();
+        List<TopicMetadata> topicMetadatas = new ArrayList<>();
         TopicMetadataResponse topicMetadataResponse = EasyMock
                 .createMock(TopicMetadataResponse.class);
         mocks.add(topicMetadataResponse);
@@ -66,7 +51,7 @@ public class EtlInputFormatTest {
 
         SimpleConsumer simpleConsumer = EasyMock.createMock(SimpleConsumer.class);
         mocks.add(simpleConsumer);
-        EasyMock.expect(simpleConsumer.clientId()).andReturn(DUMMY_VALUE).times(2);
+        EasyMock.expect(simpleConsumer.clientId()).andReturn(DUMMY_VALUE);
         EasyMock.expect(simpleConsumer.send((TopicMetadataRequest) EasyMock.anyObject())).andThrow(
                 new RuntimeException("No TopicMD"));
         EasyMock.expect(simpleConsumer.send((TopicMetadataRequest) EasyMock.anyObject()))
@@ -89,11 +74,13 @@ public class EtlInputFormatTest {
 
     @Test(expected = RuntimeException.class)
     public void testWithThreeRetries() {
-        List<Object> mocks = new ArrayList<Object>();
+        List<Object> mocks = new ArrayList<>();
 
         Configuration configuration = EasyMock.createMock(Configuration.class);
         mocks.add(configuration);
         EasyMock.expect(configuration.get(EasyMock.anyString())).andReturn(DUMMY_VALUE).anyTimes();
+        EasyMock.expect(configuration.getStringCollection(EasyMock.anyString())).andReturn(
+                Collections.singletonList(DUMMY_VALUE)).anyTimes();
 
         JobContext jobContext = EasyMock.createMock(JobContext.class);
         mocks.add(jobContext);
@@ -115,8 +102,7 @@ public class EtlInputFormatTest {
         EtlInputFormat inputFormat = new EtlInputFormatForUnitTest();
         EtlInputFormatForUnitTest.consumerType = EtlInputFormatForUnitTest.ConsumerType.MOCK;
         EtlInputFormatForUnitTest.consumer = simpleConsumer;
-        List<TopicMetadata> actualTopicMetadatas = inputFormat
-                .getKafkaMetadata(jobContext, new ArrayList<String>());
+        inputFormat.getKafkaMetadata(jobContext, new ArrayList<String>());
 
         EasyMock.verify(mocks.toArray());
     }
@@ -159,7 +145,7 @@ public class EtlInputFormatTest {
                                                         Collections.singletonList("testTopic")))
                 .andReturn(
                         Collections.singletonList(mockedTopicMetadata));
-        etlInputFormat.setLogger(Logger.getLogger(getClass()));
+        EtlInputFormat.setLogger(Logger.getLogger(getClass()));
         replay(etlInputFormat);
 
         // For partitionMetadata2, it will not refresh if the errorcode is not LeaderNotAvailable.
@@ -209,7 +195,7 @@ public class EtlInputFormatTest {
                 .andReturn(
                         Collections.singletonList(mockedTopicMetadata))
                 .times(EtlInputFormat.NUM_TRIES_PARTITION_METADATA);
-        etlInputFormat.setLogger(Logger.getLogger(getClass()));
+        EtlInputFormat.setLogger(Logger.getLogger(getClass()));
         replay(etlInputFormat);
 
         etlInputFormat.refreshPartitionMetadataOnLeaderNotAvailable(partitionMetadata,

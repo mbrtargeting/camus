@@ -45,8 +45,8 @@ public class JsonWrappedStringMessageDecoder extends MessageDecoder<Message, Str
     public static final String CAMUS_MESSAGE_TIMESTAMP_FIELD = "camus.message.timestamp.field";
     public static final String DEFAULT_TIMESTAMP_FIELD = "timestamp";
     private static final Logger log = Logger.getLogger(JsonWrappedStringMessageDecoder.class);
-    JsonParser jsonParser = new JsonParser();
-    DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateTimeParser();
+    final JsonParser jsonParser = new JsonParser();
+    final DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateTimeParser();
 
     private String timestampFormat;
     private String timestampField;

@@ -1,12 +1,7 @@
 package com.linkedin.camus.etl.kafka.common;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +11,6 @@ import java.util.Random;
 @JsonIgnoreProperties({"trackingCount", "lastKey", "eventCount", "RANDOM"})
 public class EtlCounts {
 
-    public static final int NUM_TRIES_PUBLISH_COUNTS = 3;
     private static final String TOPIC = "topic";
     private static final String GRANULARITY = "granularity";
     private static final String COUNTS = "counts";
@@ -25,9 +19,7 @@ public class EtlCounts {
     private static final String FIRST_TIMESTAMP = "firstTimestamp";
     private static final String LAST_TIMESTAMP = "lastTimestamp";
     private static final String ERROR_COUNT = "errorCount";
-    private static final String MONITORING_EVENT_CLASS = "monitoring.event.class";
     private transient static final Random RANDOM = new Random();
-    private static Logger log = Logger.getLogger(EtlCounts.class);
     protected HashMap<String, Source> counts;
     private String topic;
     private long startTime;
@@ -162,9 +154,7 @@ public class EtlCounts {
         eventCount++;
     }
 
-    public void writeCountsToMap(ArrayList<Map<String, Object>> allCountObject, FileSystem fs,
-                                 Path path)
-            throws IOException {
+    public void writeCountsToMap(ArrayList<Map<String, Object>> allCountObject) {
         Map<String, Object> countFile = new HashMap<>();
         countFile.put(TOPIC, topic);
         countFile.put(GRANULARITY, granularity);

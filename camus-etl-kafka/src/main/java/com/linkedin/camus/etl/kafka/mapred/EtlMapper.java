@@ -25,7 +25,7 @@ public class EtlMapper extends Mapper<EtlKey, CamusWrapper, EtlKey, CamusWrapper
         context.write(key, val);
 
         long endTime = System.currentTimeMillis();
-        long mapTime = ((endTime - startTime));
+        long mapTime = endTime - startTime;
         context.getCounter("total", "mapper-time(ms)").increment(mapTime);
     }
 }

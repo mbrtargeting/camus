@@ -45,8 +45,8 @@ public class JsonStringMessageDecoder extends MessageDecoder<Message, String> {
     public static final String DEFAULT_TIMESTAMP_FIELD = "timestamp";
     private static final org.apache.log4j.Logger log = Logger
             .getLogger(JsonStringMessageDecoder.class);
-    JsonParser jsonParser = new JsonParser();
-    DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateTimeParser();
+    final JsonParser jsonParser = new JsonParser();
+    final DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateTimeParser();
 
     private String timestampFormat;
     private String timestampField;

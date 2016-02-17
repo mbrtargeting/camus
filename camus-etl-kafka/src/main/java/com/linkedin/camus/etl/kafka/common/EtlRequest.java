@@ -32,7 +32,7 @@ import kafka.javaapi.consumer.SimpleConsumer;
 public class EtlRequest implements CamusRequest {
 
     public static final long DEFAULT_OFFSET = 0;
-    private static Logger log = Logger.getLogger(EtlRequest.class);
+    private static final Logger log = Logger.getLogger(EtlRequest.class);
     private JobContext context = null;
     private String topic = "";
     private String leaderId = "";
@@ -113,14 +113,14 @@ public class EtlRequest implements CamusRequest {
     }
 
     public void setAvgMsgSize(long size) {
-        this.avgMsgSize = size;
+        avgMsgSize = size;
     }
 
     /**
      * Retrieve the broker node id.
      */
     public String getLeaderId() {
-        return this.leaderId;
+        return leaderId;
     }
 
     public void setLeaderId(String leaderId) {
@@ -132,7 +132,7 @@ public class EtlRequest implements CamusRequest {
      */
     @Override
     public String getTopic() {
-        return this.topic;
+        return topic;
     }
 
     /* (non-Javadoc)
@@ -140,7 +140,7 @@ public class EtlRequest implements CamusRequest {
      */
     @Override
     public URI getURI() {
-        return this.uri;
+        return uri;
     }
 
     /* (non-Javadoc)
@@ -156,7 +156,7 @@ public class EtlRequest implements CamusRequest {
      */
     @Override
     public int getPartition() {
-        return this.partition;
+        return partition;
     }
 
     /* (non-Javadoc)
@@ -164,7 +164,7 @@ public class EtlRequest implements CamusRequest {
      */
     @Override
     public long getOffset() {
-        return this.offset;
+        return offset;
     }
 
     /* (non-Javadoc)
@@ -180,7 +180,7 @@ public class EtlRequest implements CamusRequest {
      */
     @Override
     public boolean isValidOffset() {
-        return this.offset >= 0;
+        return offset >= 0;
     }
 
     @Override
@@ -225,7 +225,7 @@ public class EtlRequest implements CamusRequest {
      */
     @Override
     public long getEarliestOffset() {
-        if (this.earliestOffset == -2 && uri != null) {
+        if (earliestOffset == -2 && uri != null) {
             // TODO : Make the hardcoded paramters configurable
             SimpleConsumer consumer = new SimpleConsumer(uri.getHost(), uri.getPort(), 60000,
                                                          1024 * 1024, "hadoop-etl");
@@ -240,10 +240,10 @@ public class EtlRequest implements CamusRequest {
                                               "hadoop-etl"));
             long[] endOffset = response.offsets(topic, partition);
             consumer.close();
-            this.earliestOffset = endOffset[0];
+            earliestOffset = endOffset[0];
             return endOffset[0];
         } else {
-            return this.earliestOffset;
+            return earliestOffset;
         }
     }
 
@@ -260,10 +260,10 @@ public class EtlRequest implements CamusRequest {
      */
     @Override
     public long getLastOffset() {
-        if (this.latestOffset == -1 && uri != null) {
+        if (latestOffset == -1 && uri != null) {
             return getLastOffset(kafka.api.OffsetRequest.LatestTime());
         } else {
-            return this.latestOffset;
+            return latestOffset;
         }
     }
 
@@ -289,7 +289,7 @@ public class EtlRequest implements CamusRequest {
                      + topic
                      + " and partition " + partition);
         }
-        this.latestOffset = endOffset[0];
+        latestOffset = endOffset[0];
         return endOffset[0];
     }
 

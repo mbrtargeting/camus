@@ -34,7 +34,7 @@ import javax.mail.internet.MimeMessage;
  */
 public class EmailClient {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(EmailClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailClient.class);
 
     private static String mailHost;
     private static String mailPort;

@@ -1,7 +1,5 @@
 package com.linkedin.camus.coders;
 
-import java.io.IOException;
-
 /**
  * Created by michaelandrepearce on 05/04/15.
  */
@@ -18,6 +16,4 @@ public interface Message {
     int getPartition();
 
     long getChecksum();
-
-    void validate() throws IOException;
 }

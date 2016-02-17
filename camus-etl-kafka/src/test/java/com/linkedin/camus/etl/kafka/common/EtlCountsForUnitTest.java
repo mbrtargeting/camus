@@ -16,6 +16,6 @@ public class EtlCountsForUnitTest extends EtlCounts {
     public enum ProducerType {
         REGULAR,
         SEND_THROWS_EXCEPTION,
-        SEND_SUCCEED_THIRD_TIME;
+        SEND_SUCCEED_THIRD_TIME
     }
 }

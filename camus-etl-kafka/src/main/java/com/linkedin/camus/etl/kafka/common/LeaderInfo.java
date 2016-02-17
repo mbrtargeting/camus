@@ -11,8 +11,8 @@ import java.net.URI;
 
 public class LeaderInfo {
 
-    private URI uri;
-    private int leaderId;
+    private final URI uri;
+    private final int leaderId;
 
     public LeaderInfo(URI uri, int leaderId) {
         this.uri = uri;
@@ -29,11 +29,11 @@ public class LeaderInfo {
 
     @Override
     public int hashCode() {
-        return this.uri.hashCode();
+        return uri.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return this.hashCode() == obj.hashCode();
+        return obj instanceof LeaderInfo && this.hashCode() == obj.hashCode();
     }
 }

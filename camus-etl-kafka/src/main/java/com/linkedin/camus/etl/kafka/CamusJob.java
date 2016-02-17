@@ -67,10 +67,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -108,11 +107,7 @@ public class CamusJob extends Configured implements Tool {
             ETL_MAX_ERRORS_TO_PRINT_FROM_FILE
             = "etl.max.errors.to.print.from.file";
     public static final String ETL_MAX_ERRORS_TO_PRINT_FROM_FILE_DEFAULT = "10";
-    public static final String ZK_AUDIT_HOSTS = "zookeeper.audit.hosts";
-    public static final String KAFKA_MONITOR_TIER = "kafka.monitor.tier";
     public static final String CAMUS_MESSAGE_ENCODER_CLASS = "camus.message.encoder.class";
-    public static final String BROKER_URI_FILE = "brokers.uri";
-    public static final String POST_TRACKING_COUNTS_TO_KAFKA = "post.tracking.counts.to.kafka";
     public static final String KAFKA_FETCH_REQUEST_MAX_WAIT = "kafka.fetch.request.max.wait";
     public static final String KAFKA_FETCH_REQUEST_MIN_BYTES = "kafka.fetch.request.min.bytes";
     public static final String
@@ -121,18 +116,16 @@ public class CamusJob extends Configured implements Tool {
     public static final String KAFKA_CLIENT_NAME = "kafka.client.name";
     public static final String KAFKA_FETCH_BUFFER_SIZE = "kafka.fetch.buffer.size";
     public static final String KAFKA_BROKERS = "kafka.brokers";
-    public static final String KAFKA_HOST_URL = "kafka.host.url";
-    public static final String KAFKA_HOST_PORT = "kafka.host.port";
     public static final String KAFKA_TIMEOUT_VALUE = "kafka.timeout.value";
     public static final String CAMUS_REPORTER_CLASS = "etl.reporter.class";
     public static final String CAMUS_CALLBACK_CLASS = "etl.callback.class";
     public static final String LOG4J_CONFIGURATION = "log4j.configuration";
 
     private static org.apache.log4j.Logger log;
-    private static HashMap<String, Long> timingMap = new HashMap<>();
+    private static final HashMap<String, Long> timingMap = new HashMap<>();
     private final Properties props;
     private Job hadoopJob = null;
-    private DateTimeFormatter dateFmt = DateUtils
+    private final DateTimeFormatter dateFmt = DateUtils
             .getDateTimeFormatter("YYYY-MM-dd-HH-mm-ss", DateTimeZone.UTC);
 
     public CamusJob() throws IOException {
@@ -184,7 +177,7 @@ public class CamusJob extends Configured implements Tool {
 
             if (files != null) {
                 for (FileStatus file : files) {
-                    if (!file.isDir()) {
+                    if (!file.isDirectory()) {
                         log.info("Adding Jar to Distributed Cache Archive File:" + file
                                 .getPath());
                         boolean filterMatch = false;
@@ -201,8 +194,7 @@ public class CamusJob extends Configured implements Tool {
                     }
                 }
             } else {
-                System.out
-                        .println("hdfs.default.classpath.dir " + hadoopCacheJarDir + " is empty.");
+                log.info("hdfs.default.classpath.dir " + hadoopCacheJarDir + " is empty.");
             }
         }
 
@@ -240,18 +232,8 @@ public class CamusJob extends Configured implements Tool {
         return job.getConfiguration().getInt(KAFKA_FETCH_REQUEST_MAX_WAIT, 1000);
     }
 
-    public static String getKafkaBrokers(JobContext job) {
-        String brokers = job.getConfiguration().get(KAFKA_BROKERS);
-        if (brokers == null) {
-            brokers = job.getConfiguration().get(KAFKA_HOST_URL);
-            if (brokers != null) {
-                log.warn(
-                        "The configuration properties " + KAFKA_HOST_URL + " and " + KAFKA_HOST_PORT
-                        + " are deprecated. Please switch to using " + KAFKA_BROKERS);
-                return brokers + ":" + job.getConfiguration().getInt(KAFKA_HOST_PORT, 10251);
-            }
-        }
-        return brokers;
+    public static Collection<String> getKafkaBrokers(JobContext job) {
+        return job.getConfiguration().getStringCollection(KAFKA_BROKERS);
     }
 
     public static int getKafkaFetchRequestCorrelationId(JobContext job) {
@@ -260,10 +242,6 @@ public class CamusJob extends Configured implements Tool {
 
     public static String getKafkaClientName(JobContext job) {
         return job.getConfiguration().get(KAFKA_CLIENT_NAME);
-    }
-
-    public static String getKafkaFetchRequestBufferSize(JobContext job) {
-        return job.getConfiguration().get(KAFKA_FETCH_BUFFER_SIZE);
     }
 
     public static int getKafkaTimeoutValue(JobContext job) {
@@ -309,7 +287,7 @@ public class CamusJob extends Configured implements Tool {
                                        System.getenv("HADOOP_TOKEN_FILE_LOCATION"));
         }
 
-        this.hadoopJob = job;
+        hadoopJob = job;
         return job;
     }
 
@@ -460,7 +438,6 @@ public class CamusJob extends Configured implements Tool {
 
             checkIfTooManySkippedMsg(counters);
 
-            // Send Tracking counts to Kafka
             moveTrackingCounts(job, fs, newExecutionOutput);
 
             log.info("Job finished");
@@ -630,8 +607,8 @@ public class CamusJob extends Configured implements Tool {
     }
 
     public void cancel() throws IOException {
-        if (this.hadoopJob != null) {
-            this.hadoopJob.killJob();
+        if (hadoopJob != null) {
+            hadoopJob.killJob();
         }
     }
 
@@ -714,11 +691,8 @@ public class CamusJob extends Configured implements Tool {
         return !errors.isEmpty();
     }
 
-    // Posts the tracking counts to Kafka
     public void moveTrackingCounts(JobContext job, FileSystem fs, Path newExecutionOutput)
-            throws IOException, URISyntaxException, IllegalArgumentException, SecurityException,
-                   InstantiationException, IllegalAccessException, InvocationTargetException,
-                   NoSuchMethodException {
+            throws IOException, IllegalArgumentException {
         if (EtlMultiOutputFormat.isRunTrackingPost(job)) {
             FileStatus[] gstatuses = fs.listStatus(newExecutionOutput, new PrefixFilter("counts"));
             HashMap<String, EtlCounts> allCounts = new HashMap<>();
@@ -838,7 +812,7 @@ public class CamusJob extends Configured implements Tool {
 
         if (cmd.hasOption('p')) {
             props.load(
-                    this.getClass().getClassLoader().getResourceAsStream(cmd.getOptionValue('p')));
+                    getClass().getClassLoader().getResourceAsStream(cmd.getOptionValue('p')));
         }
 
         if (cmd.hasOption('P')) {

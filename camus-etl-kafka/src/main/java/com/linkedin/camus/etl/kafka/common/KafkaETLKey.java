@@ -46,31 +46,31 @@ public class KafkaETLKey implements WritableComparable<KafkaETLKey> {
     }
 
     public int getIndex() {
-        return this.inputIndex;
+        return inputIndex;
     }
 
     public long getOffset() {
-        return this.offset;
+        return offset;
     }
 
     public long getChecksum() {
-        return this.checksum;
+        return checksum;
     }
 
     @Override
     public void readFields(DataInput in) throws IOException {
-        this.inputIndex = in.readInt();
-        this.offset = in.readLong();
-        this.checksum = in.readLong();
-        this.topic = in.readUTF();
+        inputIndex = in.readInt();
+        offset = in.readLong();
+        checksum = in.readLong();
+        topic = in.readUTF();
     }
 
     @Override
     public void write(DataOutput out) throws IOException {
-        out.writeInt(this.inputIndex);
-        out.writeLong(this.offset);
-        out.writeLong(this.checksum);
-        out.writeUTF(this.topic);
+        out.writeInt(inputIndex);
+        out.writeLong(offset);
+        out.writeLong(checksum);
+        out.writeUTF(topic);
     }
 
     @Override

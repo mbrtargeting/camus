@@ -18,6 +18,5 @@ public interface RecordWriterProvider {
 
     RecordWriter<IEtlKey, CamusWrapper> getDataRecordWriter(
             TaskAttemptContext context, String fileName, CamusWrapper data,
-            FileOutputCommitter committer) throws IOException,
-                                                  InterruptedException;
+            FileOutputCommitter committer) throws IOException;
 }

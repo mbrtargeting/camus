@@ -105,17 +105,17 @@ public class EtlInputFormatForUnitTest extends EtlInputFormat {
         //do nothing
     }
 
-    public static enum ConsumerType {
+    public enum ConsumerType {
         REGULAR,
         MOCK
     }
 
-    public static enum RecordReaderClass {
+    public enum RecordReaderClass {
         REGULAR,
         TEST
     }
 
-    public static enum CamusRequestType {
+    public enum CamusRequestType {
         REGULAR,
         MOCK_OFFSET_TOO_EARLY,
         MOCK_OFFSET_TOO_LATE

@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import kafka.api.PartitionFetchInfo;
+import kafka.common.ErrorMapping;
 import kafka.common.TopicAndPartition;
 import kafka.javaapi.FetchRequest;
 import kafka.javaapi.FetchResponse;
@@ -36,23 +37,23 @@ import kafka.message.MessageAndOffset;
 public class KafkaReader {
 
     // index of context
-    private static Logger log = Logger.getLogger(KafkaReader.class);
-    private EtlRequest kafkaRequest = null;
-    private SimpleConsumer simpleConsumer = null;
+    private final static Logger log = Logger.getLogger(KafkaReader.class);
+    private final EtlRequest kafkaRequest;
+    private SimpleConsumer simpleConsumer;
 
-    private long beginOffset;
+    private final long beginOffset;
+    private final long lastOffset;
     private long currentOffset;
-    private long lastOffset;
     private long currentCount;
 
-    private TaskAttemptContext context;
+    private final TaskAttemptContext context;
 
     private Iterator<MessageAndOffset> messageIter = null;
 
     private long totalFetchTime = 0;
     private long lastFetchTime = 0;
 
-    private int fetchBufferSize;
+    private final int fetchBufferSize;
 
     /**
      * Construct using the json representation of the kafka request
@@ -67,7 +68,6 @@ public class KafkaReader {
         log.info("timeout=" + clientTimeout);
 
         // Create the kafka request from the json
-
         kafkaRequest = request;
 
         beginOffset = request.getOffset();
@@ -77,12 +77,11 @@ public class KafkaReader {
         totalFetchTime = 0;
 
         // read data from queue
-
         URI uri = kafkaRequest.getURI();
         simpleConsumer = inputFormat.createSimpleConsumer(context, uri.getHost(), uri.getPort());
-        log.info("Connected to leader " + uri + " beginning reading at offset " + beginOffset
-                 + " latest offset="
-                 + lastOffset);
+        log.info(String.format(
+                "Connected to leader %s beginning reading at offset %d latest offset=%d", uri,
+                beginOffset, lastOffset));
     }
 
     public boolean hasNext() throws IOException, MetadataFetchException {
@@ -96,35 +95,31 @@ public class KafkaReader {
      *
      * @return true if there exists more events
      */
-    public KafkaMessage getNext(EtlKey etlKey) throws IOException, MetadataFetchException {
-        if (hasNext()) {
-
-            MessageAndOffset msgAndOffset = messageIter.next();
-            Message message = msgAndOffset.message();
-
-            byte[] payload = getBytes(message.payload());
-            byte[] key = getBytes(message.key());
-
-            if (payload == null) {
-                log.warn("Received message with null message.payload(): " + msgAndOffset);
-            }
-
-            etlKey.clear();
-            etlKey.set(kafkaRequest.getTopic(), kafkaRequest.getLeaderId(),
-                       kafkaRequest.getPartition(), currentOffset,
-                       msgAndOffset.offset() + 1, message.checksum());
-
-            etlKey.setMessageSize(msgAndOffset.message().size());
-
-            currentOffset = msgAndOffset.offset() + 1; // increase offset
-            currentCount++; // increase count
-
-            return new KafkaMessage(payload, key, kafkaRequest.getTopic(),
-                                    kafkaRequest.getPartition(),
-                                    msgAndOffset.offset(), message.checksum());
-        } else {
+    public KafkaMessage getNext(final EtlKey etlKey) throws IOException, MetadataFetchException {
+        if (!hasNext()) {
             return null;
         }
+        final MessageAndOffset msgAndOffset = messageIter.next();
+        final Message message = msgAndOffset.message();
+
+        byte[] payload = getBytes(message.payload());
+        byte[] key = getBytes(message.key());
+
+        if (payload == null) {
+            log.warn("Received message with null message.payload(): " + msgAndOffset);
+        }
+
+        etlKey.clear();
+        etlKey.set(kafkaRequest.getTopic(), kafkaRequest.getLeaderId(), kafkaRequest.getPartition(),
+                   currentOffset, msgAndOffset.offset() + 1, message.checksum());
+
+        etlKey.setMessageSize(msgAndOffset.message().size());
+
+        currentOffset = msgAndOffset.offset() + 1; // increase offset
+        currentCount++; // increase count
+
+        return new KafkaMessage(payload, key, kafkaRequest.getTopic(), kafkaRequest.getPartition(),
+                                msgAndOffset.offset(), message.checksum());
     }
 
     private byte[] getBytes(ByteBuffer buf) {
@@ -147,13 +142,14 @@ public class KafkaReader {
             return false;
         }
         long tempTime = System.currentTimeMillis();
-        TopicAndPartition topicAndPartition = new TopicAndPartition(kafkaRequest.getTopic(),
-                                                                    kafkaRequest.getPartition());
-        log.debug("\nAsking for offset : " + (currentOffset));
-        PartitionFetchInfo partitionFetchInfo = new PartitionFetchInfo(currentOffset,
-                                                                       fetchBufferSize);
+        final TopicAndPartition topicAndPartition = new TopicAndPartition(
+                kafkaRequest.getTopic(),
+                kafkaRequest.getPartition());
+        log.debug("\nAsking for offset : " + currentOffset);
+        final PartitionFetchInfo partitionFetchInfo = new PartitionFetchInfo(currentOffset,
+                                                                             fetchBufferSize);
 
-        HashMap<TopicAndPartition, PartitionFetchInfo> fetchInfo = new HashMap<>();
+        final HashMap<TopicAndPartition, PartitionFetchInfo> fetchInfo = new HashMap<>();
         fetchInfo.put(topicAndPartition, partitionFetchInfo);
 
         FetchRequest fetchRequest =
@@ -162,14 +158,13 @@ public class KafkaReader {
                                  CamusJob.getKafkaFetchRequestMaxWait(context),
                                  CamusJob.getKafkaFetchRequestMinBytes(context), fetchInfo);
 
-        FetchResponse fetchResponse;
         try {
-            fetchResponse = simpleConsumer.fetch(fetchRequest);
+            final FetchResponse fetchResponse = simpleConsumer.fetch(fetchRequest);
             if (fetchResponse.hasError()) {
-                short errorCode = fetchResponse.errorCode(kafkaRequest.getTopic(),
-                                                          kafkaRequest.getPartition());
-                String message = "Error Code generated : " + errorCode;
-                throw new RuntimeException(message);
+                final Throwable cause = ErrorMapping.exceptionFor(
+                        fetchResponse.errorCode(kafkaRequest.getTopic(),
+                                                kafkaRequest.getPartition()));
+                throw new RuntimeException("Fetch Error", cause);
             }
             return processFetchResponse(fetchResponse, tempTime);
         } catch (Exception e) {
@@ -184,7 +179,7 @@ public class KafkaReader {
             throws MetadataFetchException {
         try {
             refreshTopicMetadata();
-            FetchResponse fetchResponse = simpleConsumer.fetch(fetchRequest);
+            final FetchResponse fetchResponse = simpleConsumer.fetch(fetchRequest);
             if (fetchResponse.hasError()) {
                 log.warn("Error encountered during fetch request retry from Kafka");
                 log.warn("Error Code generated : "
@@ -201,61 +196,52 @@ public class KafkaReader {
     }
 
     private void refreshTopicMetadata() {
-        TopicMetadataRequest request = new TopicMetadataRequest(
+        final TopicMetadataRequest request = new TopicMetadataRequest(
                 Collections.singletonList(kafkaRequest.getTopic()));
-        TopicMetadataResponse response;
+        final TopicMetadataResponse response;
         try {
             response = simpleConsumer.send(request);
         } catch (Exception e) {
-            log.error(
-                    "Exception caught when refreshing metadata for topic " + request.topics().get(0)
-                    + ": "
-                    + e.getMessage());
+            log.error(String.format("Exception caught when refreshing metadata for topic %s: %s",
+                                    request.topics().get(0), e.getMessage()));
             return;
         }
-        TopicMetadata metadata = response.topicsMetadata().get(0);
-        for (PartitionMetadata partitionMetadata : metadata.partitionsMetadata()) {
+        final TopicMetadata metadata = response.topicsMetadata().get(0);
+        for (final PartitionMetadata partitionMetadata : metadata.partitionsMetadata()) {
             if (partitionMetadata.partitionId() == kafkaRequest.getPartition()) {
-                simpleConsumer =
-                        new SimpleConsumer(partitionMetadata.leader().host(),
-                                           partitionMetadata.leader().port(),
-                                           CamusJob.getKafkaTimeoutValue(context),
-                                           CamusJob.getKafkaBufferSize(context),
-                                           CamusJob.getKafkaClientName(context));
-                break;
+                simpleConsumer = new SimpleConsumer(partitionMetadata.leader().host(),
+                                                    partitionMetadata.leader().port(),
+                                                    CamusJob.getKafkaTimeoutValue(context),
+                                                    CamusJob.getKafkaBufferSize(context),
+                                                    CamusJob.getKafkaClientName(context));
+                return;
             }
         }
     }
 
     private boolean processFetchResponse(FetchResponse fetchResponse, long tempTime) {
         try {
-            ByteBufferMessageSet messageBuffer =
+            final ByteBufferMessageSet messageBuffer =
                     fetchResponse.messageSet(kafkaRequest.getTopic(), kafkaRequest.getPartition());
-            lastFetchTime = (System.currentTimeMillis() - tempTime);
+            lastFetchTime = System.currentTimeMillis() - tempTime;
             log.debug("Time taken to fetch : " + (lastFetchTime / 1000) + " seconds");
             log.debug("The size of the ByteBufferMessageSet returned is : " + messageBuffer
                     .sizeInBytes());
-            int skipped = 0;
             totalFetchTime += lastFetchTime;
             messageIter = messageBuffer.iterator();
-            //boolean flag = false;
-            Iterator<MessageAndOffset> messageIter2 = messageBuffer.iterator();
+            final Iterator<MessageAndOffset> lookAhead = messageBuffer.iterator();
             MessageAndOffset message;
-            while (messageIter2.hasNext()) {
-                message = messageIter2.next();
+            int skipped = 0;
+            while (lookAhead.hasNext()) {
+                message = lookAhead.next();
                 if (message.offset() < currentOffset) {
-                    //flag = true;
                     skipped++;
+                    messageIter.next();
                 } else {
+                    log.debug("Number of offsets to be skipped: " + skipped);
                     log.debug("Skipped offsets till : " + message.offset());
                     break;
                 }
-            }
-            log.debug("Number of offsets to be skipped: " + skipped);
-            while (skipped != 0) {
-                MessageAndOffset skippedMessage = messageIter.next();
-                log.debug("Skipping offset : " + skippedMessage.offset());
-                skipped--;
             }
 
             if (!messageIter.hasNext()) {

@@ -22,6 +22,7 @@ public class EtlRecordReaderForUnitTest extends EtlRecordReader {
         super(etlInputFormatForUnitTest, split, context);
     }
 
+    @SuppressWarnings("unchecked")
     public static MessageDecoder createMockDecoder30PercentSchemaNotFound() {
         MessageDecoder mockDecoder = EasyMock.createNiceMock(MessageDecoder.class);
         EasyMock.expect(mockDecoder.decode(EasyMock.anyObject())).andThrow(new IOException())
@@ -32,6 +33,7 @@ public class EtlRecordReaderForUnitTest extends EtlRecordReader {
         return mockDecoder;
     }
 
+    @SuppressWarnings("unchecked")
     public static MessageDecoder createMockDecoder30PercentOther() {
         MessageDecoder mockDecoder = EasyMock.createNiceMock(MessageDecoder.class);
         EasyMock.expect(mockDecoder.decode(EasyMock.anyObject())).andThrow(new RuntimeException())
@@ -63,6 +65,6 @@ public class EtlRecordReaderForUnitTest extends EtlRecordReader {
     public enum DecoderType {
         REGULAR,
         SCHEMA_NOT_FOUND_30_PERCENT,
-        OTHER_30_PERCENT;
+        OTHER_30_PERCENT
     }
 }

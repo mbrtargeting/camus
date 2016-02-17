@@ -15,7 +15,7 @@ import java.util.List;
 
 public class EtlSplit extends InputSplit implements Writable {
 
-    private List<CamusRequest> requests = new ArrayList<CamusRequest>();
+    private final List<CamusRequest> requests = new ArrayList<>();
     private long length = 0;
     private String currentTopic = "";
 

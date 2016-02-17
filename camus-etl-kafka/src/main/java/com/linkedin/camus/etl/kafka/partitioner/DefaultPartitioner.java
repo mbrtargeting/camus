@@ -56,28 +56,20 @@ public class DefaultPartitioner extends Partitioner {
     public String generateFileName(JobContext context, String topic, String brokerId,
                                    int partitionId, int count,
                                    long offset, String encodedPartition) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(topic);
-        sb.append(".").append(brokerId);
-        sb.append(".").append(partitionId);
-        sb.append(".").append(count);
-        sb.append(".").append(offset);
-        sb.append(".").append(encodedPartition);
 
-        return sb.toString();
+        return topic + "." + brokerId + "." + partitionId + "." + count + "." + offset +
+               "." + encodedPartition;
     }
 
     @Override
     public String getWorkingFileName(JobContext context, String topic, String brokerId,
                                      int partitionId,
                                      String encodedPartition) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("data.").append(topic.replaceAll("\\.", "_"));
-        sb.append(".").append(brokerId);
-        sb.append(".").append(partitionId);
-        sb.append(".").append(encodedPartition);
 
-        return sb.toString();
+        return "data." + topic.replaceAll("\\.", "_") +
+               "." + brokerId +
+               "." + partitionId +
+               "." + encodedPartition;
     }
 
     @Override

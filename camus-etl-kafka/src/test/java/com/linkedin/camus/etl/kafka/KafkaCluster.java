@@ -37,12 +37,12 @@ public class KafkaCluster {
 
     public KafkaCluster(Properties baseProperties, int numOfBrokers) throws IOException {
 
-        this.zookeeper = new EmbeddedZookeeper();
-        this.brokers = new ArrayList<KafkaServer>();
+        zookeeper = new EmbeddedZookeeper();
+        brokers = new ArrayList<>();
 
-        this.props = new Properties();
+        props = new Properties();
 
-        this.props.putAll(baseProperties);
+        props.putAll(baseProperties);
 
         StringBuilder builder = null;
 
@@ -70,8 +70,8 @@ public class KafkaCluster {
             brokers.add(startBroker(properties));
         }
 
-        this.props.put("metadata.broker.list", builder.toString());
-        this.props.put("zookeeper.connect", zookeeper.getConnection());
+        props.put("metadata.broker.list", builder.toString());
+        props.put("zookeeper.connect", zookeeper.getConnection());
 
     }
 
@@ -93,11 +93,8 @@ public class KafkaCluster {
     }
 
     private static int getAvailablePort() throws IOException {
-        ServerSocket socket = new ServerSocket(0);
-        try {
+        try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
-        } finally {
-            socket.close();
         }
     }
 
@@ -143,14 +140,13 @@ public class KafkaCluster {
         /**
          * Constructs an embedded Zookeeper instance.
          *
-         * @param connectString Zookeeper connection string.
          * @throws IOException if an error occurs during Zookeeper initialization.
          */
         public EmbeddedZookeeper() throws IOException {
-            this.port = getAvailablePort();
-            this.snapshotDir = getTempDir();
-            this.logDir = getTempDir();
-            this.factory = new NIOServerCnxn.Factory(new InetSocketAddress("localhost", port),
+            port = getAvailablePort();
+            snapshotDir = getTempDir();
+            logDir = getTempDir();
+            factory = new NIOServerCnxn.Factory(new InetSocketAddress("localhost", port),
                                                      1024);
 
             try {

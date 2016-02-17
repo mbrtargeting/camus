@@ -7,55 +7,55 @@ import java.net.URI;
 
 public interface CamusRequest extends Writable {
 
-    public abstract void setLatestOffset(long latestOffset);
+    void setLatestOffset(long latestOffset);
 
     /**
      * Retrieve the topic
      */
-    public abstract String getTopic();
+    String getTopic();
 
     /**
      * Retrieves the uri if set. The default is null.
      */
-    public abstract URI getURI();
+    URI getURI();
 
     /**
      * Sets the broker uri for this request
      */
-    public abstract void setURI(URI uri);
+    void setURI(URI uri);
 
     /**
      * Retrieves the partition number
      */
-    public abstract int getPartition();
+    int getPartition();
 
     /**
      * Retrieves the offset
      */
-    public abstract long getOffset();
+    long getOffset();
 
     /**
      * Sets the starting offset used by the kafka pull mapper.
      */
-    public abstract void setOffset(long offset);
+    void setOffset(long offset);
 
     /**
      * Returns true if the offset is valid (>= to earliest offset && <= to last
      * offset)
      */
-    public abstract boolean isValidOffset();
+    boolean isValidOffset();
 
-    public abstract long getEarliestOffset();
+    long getEarliestOffset();
 
-    public abstract void setEarliestOffset(long earliestOffset);
+    void setEarliestOffset(long earliestOffset);
 
-    public abstract long getLastOffset();
+    long getLastOffset();
 
-    public abstract long getLastOffset(long time);
+    long getLastOffset(long time);
 
-    public abstract long estimateDataSize();
+    long estimateDataSize();
 
-    public abstract void setAvgMsgSize(long size);
+    void setAvgMsgSize(long size);
 
     /**
      * Estimates the request size in bytes by connecting to the broker and
@@ -63,6 +63,6 @@ public interface CamusRequest extends Writable {
      *
      * @param endTime The time in millisec
      */
-    public abstract long estimateDataSize(long endTime);
+    long estimateDataSize(long endTime);
 
 }

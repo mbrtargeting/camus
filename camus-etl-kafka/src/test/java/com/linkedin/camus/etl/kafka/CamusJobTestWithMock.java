@@ -49,7 +49,6 @@ import kafka.javaapi.TopicMetadataResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.Message;
-import kafka.producer.KeyedMessage;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -78,7 +77,7 @@ public class CamusJobTestWithMock {
     private static Map<String, List<MyMessage>> messagesWritten;
 
     // mock objects
-    private static List<Object> mocks = new ArrayList<Object>();
+    private static final List<Object> mocks = new ArrayList<>();
     private Properties props;
     private CamusJob job;
     private TemporaryFolder folder;
@@ -90,7 +89,7 @@ public class CamusJobTestWithMock {
         gson = new Gson();
 
         // You can't delete messages in Kafka so just writing a set of known messages that can be used for testing
-        messagesWritten = new HashMap<String, List<MyMessage>>();
+        messagesWritten = new HashMap<>();
         messagesWritten.put(TOPIC_1, writeKafka(TOPIC_1, 10));
     }
 
@@ -100,16 +99,10 @@ public class CamusJobTestWithMock {
 
     private static List<MyMessage> writeKafka(String topic, int numOfMessages) {
 
-        List<MyMessage> messages = new ArrayList<MyMessage>();
-        List<KeyedMessage<String, String>>
-                kafkaMessages
-                = new ArrayList<KeyedMessage<String, String>>();
-
+        List<MyMessage> messages = new ArrayList<>();
         for (int i = 0; i < numOfMessages; i++) {
             MyMessage msg = new MyMessage(RANDOM.nextInt());
             messages.add(msg);
-            kafkaMessages.add(new KeyedMessage<String, String>(topic, Integer.toString(i),
-                                                               gson.toJson(msg)));
         }
 
         return messages;
@@ -247,14 +240,14 @@ public class CamusJobTestWithMock {
         Broker broker = new Broker(0, "localhost", 2121);
         EasyMock.expect(pMeta.leader()).andReturn(broker).anyTimes();
         EasyMock.expect(pMeta.partitionId()).andReturn(PARTITION_1_ID).anyTimes();
-        List<PartitionMetadata> partitionMetadatas = new ArrayList<PartitionMetadata>();
+        List<PartitionMetadata> partitionMetadatas = new ArrayList<>();
         partitionMetadatas.add(pMeta);
         TopicMetadata tMeta = EasyMock.createMock(TopicMetadata.class);
         mocks.add(tMeta);
         EasyMock.expect(tMeta.topic()).andReturn(TOPIC_1).anyTimes();
         EasyMock.expect(tMeta.errorCode()).andReturn((short) 0).anyTimes();
         EasyMock.expect(tMeta.partitionsMetadata()).andReturn(partitionMetadatas).anyTimes();
-        List<TopicMetadata> topicMetadatas = new ArrayList<TopicMetadata>();
+        List<TopicMetadata> topicMetadatas = new ArrayList<>();
         topicMetadatas.add(tMeta);
         TopicMetadataResponse metadataResponse = EasyMock.createMock(TopicMetadataResponse.class);
         mocks.add(metadataResponse);
@@ -278,7 +271,8 @@ public class CamusJobTestWithMock {
     private FetchResponse mockFetchResponse(List<MyMessage> myMessages) {
         FetchResponse fetchResponse = EasyMock.createMock(FetchResponse.class);
         EasyMock.expect(fetchResponse.hasError()).andReturn(false).times(1);
-        List<Message> messages = new ArrayList<Message>();
+        List<Message> messages;
+        messages = new ArrayList<Message>();
         for (MyMessage myMessage : myMessages) {
             String payload = gson.toJson(myMessage);
             String msgKey = Integer.toString(PARTITION_1_ID);
@@ -560,7 +554,7 @@ public class CamusJobTestWithMock {
 
     private List<MyMessage> readMessages(Path path)
             throws IOException, InstantiationException, IllegalAccessException {
-        List<MyMessage> messages = new ArrayList<MyMessage>();
+        List<MyMessage> messages = new ArrayList<>();
 
         try {
             for (FileStatus file : fs.listStatus(path)) {

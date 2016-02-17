@@ -38,7 +38,7 @@ public class SequenceFileRecordWriterProvider implements RecordWriterProvider {
     public static final String ETL_OUTPUT_RECORD_DELIMITER = "etl.output.record.delimiter";
     public static final String DEFAULT_RECORD_DELIMITER = "";
 
-    private static Logger log = Logger.getLogger(SequenceFileRecordWriterProvider.class);
+    private static final Logger log = Logger.getLogger(SequenceFileRecordWriterProvider.class);
 
     protected String recordDelimiter = null;
 
@@ -59,7 +59,7 @@ public class SequenceFileRecordWriterProvider implements RecordWriterProvider {
                                                                    String fileName,
                                                                    CamusWrapper camusWrapper,
                                                                    FileOutputCommitter committer)
-            throws IOException, InterruptedException {
+            throws IOException {
 
         Configuration conf = context.getConfiguration();
 

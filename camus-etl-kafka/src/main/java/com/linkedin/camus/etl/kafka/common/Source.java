@@ -51,13 +51,12 @@ public class Source {
 
     @Override
     public int hashCode() {
-
         return (server + service + start).hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        return this.hashCode() == obj.hashCode();
+        return obj instanceof Source && this.hashCode() == obj.hashCode();
     }
 
     @Override

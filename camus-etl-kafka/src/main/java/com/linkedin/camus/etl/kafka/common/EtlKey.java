@@ -23,7 +23,6 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
 
     public static final Text SERVER = new Text("server");
     public static final Text SERVICE = new Text("service");
-    public static EtlKey DUMMY_KEY = new EtlKey();
 
     private String leaderId = "";
     private int partition = 0;
@@ -58,16 +57,16 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
     }
 
     public EtlKey(String topic, String leaderId, int partition) {
-        this.set(topic, leaderId, partition, 0, 0, 0);
+        set(topic, leaderId, partition, 0, 0, 0);
     }
 
     public EtlKey(String topic, String leaderId, int partition, long beginOffset, long offset) {
-        this.set(topic, leaderId, partition, beginOffset, offset, 0);
+        set(topic, leaderId, partition, beginOffset, offset, 0);
     }
 
     public EtlKey(String topic, String leaderId, int partition, long beginOffset, long offset,
                   long checksum) {
-        this.set(topic, leaderId, partition, beginOffset, offset, checksum);
+        set(topic, leaderId, partition, beginOffset, offset, checksum);
     }
 
     public void set(String topic, String leaderId, int partition, long beginOffset, long offset,
@@ -129,15 +128,15 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
     }
 
     public int getPartition() {
-        return this.partition;
+        return partition;
     }
 
     public long getBeginOffset() {
-        return this.beginOffset;
+        return beginOffset;
     }
 
     public long getOffset() {
-        return this.offset;
+        return offset;
     }
 
     public void setOffset(long offset) {
@@ -145,14 +144,14 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
     }
 
     public long getChecksum() {
-        return this.checksum;
+        return checksum;
     }
 
     @Override
     public long getMessageSize() {
         Text key = new Text("message.size");
-        if (this.partitionMap.containsKey(key)) {
-            return ((LongWritable) this.partitionMap.get(key)).get();
+        if (partitionMap.containsKey(key)) {
+            return ((LongWritable) partitionMap.get(key)).get();
         } else {
             return 1024; //default estimated size
         }
@@ -164,10 +163,10 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
     }
 
     public long getTotalMessageSize() {
-        if (this.totalMessageSize == 0) {
-            this.totalMessageSize = this.getMessageSize();
+        if (totalMessageSize == 0) {
+            totalMessageSize = getMessageSize();
         }
-        return this.totalMessageSize;
+        return totalMessageSize;
     }
 
     public void setTotalMessageSize(long totalMessageSize) {
@@ -175,7 +174,7 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
     }
 
     public void put(Writable key, Writable value) {
-        this.partitionMap.put(key, value);
+        partitionMap.put(key, value);
     }
 
     public void addAllPartitionMap(MapWritable partitionMap) {
@@ -188,36 +187,36 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
 
     @Override
     public void readFields(DataInput in) throws IOException {
-        this.leaderId = UTF8.readString(in);
-        this.partition = in.readInt();
-        this.beginOffset = in.readLong();
-        this.offset = in.readLong();
-        this.checksum = in.readLong();
-        this.topic = in.readUTF();
-        this.time = in.readLong();
-        this.server = in.readUTF(); // left for legacy
-        this.service = in.readUTF(); // left for legacy
-        this.partitionMap = new MapWritable();
+        leaderId = UTF8.readString(in);
+        partition = in.readInt();
+        beginOffset = in.readLong();
+        offset = in.readLong();
+        checksum = in.readLong();
+        topic = in.readUTF();
+        time = in.readLong();
+        server = in.readUTF(); // left for legacy
+        service = in.readUTF(); // left for legacy
+        partitionMap = new MapWritable();
         try {
-            this.partitionMap.readFields(in);
+            partitionMap.readFields(in);
         } catch (IOException e) {
-            this.setServer(this.server);
-            this.setService(this.service);
+            setServer(server);
+            setService(service);
         }
     }
 
     @Override
     public void write(DataOutput out) throws IOException {
-        UTF8.writeString(out, this.leaderId);
-        out.writeInt(this.partition);
-        out.writeLong(this.beginOffset);
-        out.writeLong(this.offset);
-        out.writeLong(this.checksum);
-        out.writeUTF(this.topic);
-        out.writeLong(this.time);
-        out.writeUTF(this.server); // left for legacy
-        out.writeUTF(this.service); // left for legacy
-        this.partitionMap.write(out);
+        UTF8.writeString(out, leaderId);
+        out.writeInt(partition);
+        out.writeLong(beginOffset);
+        out.writeLong(offset);
+        out.writeLong(checksum);
+        out.writeUTF(topic);
+        out.writeLong(time);
+        out.writeUTF(server); // left for legacy
+        out.writeUTF(service); // left for legacy
+        partitionMap.write(out);
     }
 
     @Override

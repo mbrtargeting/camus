@@ -18,9 +18,7 @@ import org.apache.log4j.Logger;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -67,7 +65,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
             partitionersByTopic
             = new HashMap<>();
 
-    private static Logger log = Logger.getLogger(EtlMultiOutputFormat.class);
+    private static final Logger log = Logger.getLogger(EtlMultiOutputFormat.class);
 
     public static void setRecordWriterProviderClass(JobContext job,
                                                     Class<RecordWriterProvider> recordWriterProviderClass) {
@@ -75,6 +73,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
                                         RecordWriterProvider.class);
     }
 
+    @SuppressWarnings("unchecked")
     public static Class<RecordWriterProvider> getRecordWriterProviderClass(JobContext job) {
         return (Class<RecordWriterProvider>) job.getConfiguration()
                 .getClass(ETL_RECORD_WRITER_PROVIDER_CLASS, StringRecordWriterProvider.class);
@@ -187,17 +186,14 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
                 job.getConfiguration());
     }
 
-    public static Partitioner getPartitioner(JobContext job, String topicName) throws IOException {
+    public static Partitioner getPartitioner(JobContext job, String topicName) {
         String customPartitionerProperty = ETL_DEFAULT_PARTITIONER_CLASS + "." + topicName;
-        if (partitionersByTopic.get(customPartitionerProperty) == null) {
-            List<Partitioner> partitioners = new ArrayList<>();
-            if (partitioners.isEmpty()) {
-                return getDefaultPartitioner(job);
-            } else {
-                partitionersByTopic.put(customPartitionerProperty, partitioners.get(0));
-            }
+        if (partitionersByTopic.get(customPartitionerProperty) != null) {
+            return partitionersByTopic.get(customPartitionerProperty);
         }
-        return partitionersByTopic.get(customPartitionerProperty);
+        final Partitioner defaultPartitioner = getDefaultPartitioner(job);
+        partitionersByTopic.put(customPartitionerProperty, defaultPartitioner);
+        return defaultPartitioner;
     }
 
     public static void resetPartitioners() {

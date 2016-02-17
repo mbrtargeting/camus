@@ -13,9 +13,9 @@ import org.apache.hadoop.io.Writable;
  */
 public class CamusWrapper<R> {
 
-    private R record;
-    private long timestamp;
-    private MapWritable partitionMap;
+    private final R record;
+    private final long timestamp;
+    private final MapWritable partitionMap;
 
     public CamusWrapper(R record) {
         this(record, System.currentTimeMillis());
@@ -28,7 +28,7 @@ public class CamusWrapper<R> {
     public CamusWrapper(R record, long timestamp, String server, String service) {
         this.record = record;
         this.timestamp = timestamp;
-        this.partitionMap = new MapWritable();
+        partitionMap = new MapWritable();
         partitionMap.put(new Text("server"), new Text(server));
         partitionMap.put(new Text("service"), new Text(service));
     }

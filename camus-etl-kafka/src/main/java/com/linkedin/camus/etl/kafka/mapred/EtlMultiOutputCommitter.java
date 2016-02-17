@@ -1,5 +1,6 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
+import com.linkedin.camus.etl.Partitioner;
 import com.linkedin.camus.etl.RecordWriterProvider;
 import com.linkedin.camus.etl.kafka.common.EtlCounts;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
@@ -29,19 +30,18 @@ import java.util.regex.Pattern;
 public class EtlMultiOutputCommitter extends FileOutputCommitter {
 
     private final RecordWriterProvider recordWriterProvider;
-    private Pattern workingFileMetadataPattern;
-    private HashMap<String, EtlCounts> counts = new HashMap<>();
-    private HashMap<String, EtlKey> offsets = new HashMap<>();
-    private HashMap<String, Long> eventCounts = new HashMap<>();
-    private TaskAttemptContext context;
-    private Logger log;
+    private final Pattern workingFileMetadataPattern;
+    private final HashMap<String, EtlCounts> counts = new HashMap<>();
+    private final HashMap<String, EtlKey> offsets = new HashMap<>();
+    private final HashMap<String, Long> eventCounts = new HashMap<>();
+    private final TaskAttemptContext context;
+    private final Logger log;
 
     public EtlMultiOutputCommitter(Path outputPath, TaskAttemptContext context, Logger log)
             throws IOException {
         super(outputPath, context);
         this.context = context;
         try {
-            //recordWriterProvider = EtlMultiOutputFormat.getRecordWriterProviderClass(context).newInstance();
             Class<RecordWriterProvider> rwp = EtlMultiOutputFormat
                     .getRecordWriterProviderClass(context);
             Constructor<RecordWriterProvider> crwp = rwp.getConstructor(TaskAttemptContext.class);
@@ -117,18 +117,11 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
                         mkdirs(fs, dest.getParent());
                     }
 
-                    commitFile(context, f.getPath(), dest);
+                    commitFile(fs, f.getPath(), dest);
                     log.info("Moved file from: " + f.getPath() + " to: " + dest);
 
                     if (EtlMultiOutputFormat.isRunTrackingPost(context)) {
-                        count.writeCountsToMap(allCountObject, fs, new Path(workPath,
-                                                                            EtlMultiOutputFormat.COUNTS_PREFIX
-                                                                            + "."
-                                                                            + dest.getName()
-                                                                                    .replace(
-                                                                                            recordWriterProvider
-                                                                                                    .getFilenameExtension(),
-                                                                                            "")));
+                        count.writeCountsToMap(allCountObject);
                     }
                 }
             }
@@ -166,9 +159,9 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
         super.commitTask(context);
     }
 
-    protected void commitFile(JobContext job, Path source, Path target) throws IOException {
+    protected void commitFile(FileSystem fs, Path source, Path target) throws IOException {
         log.info(String.format("Moving %s to %s", source, target));
-        if (!FileSystem.get(job.getConfiguration()).rename(source, target)) {
+        if (!fs.rename(source, target)) {
             log.error(String.format("Failed to move from %s to %s", source, target));
             throw new IOException(String.format("Failed to move from %s to %s", source, target));
         }
@@ -176,7 +169,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
 
     public String getPartitionedPath(JobContext context, String file, int count, long offset)
             throws IOException {
-        Matcher m = workingFileMetadataPattern.matcher(file);
+        final Matcher m = workingFileMetadataPattern.matcher(file);
         if (!m.find()) {
             throw new IOException(
                     "Could not extract metadata from working filename '" + file + "'");
@@ -186,14 +179,13 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
         String partition = m.group(3);
         String encodedPartition = m.group(4);
 
-        String partitionedPath =
-                EtlMultiOutputFormat.getPartitioner(context, topic)
-                        .generatePartitionedPath(context, topic, encodedPartition);
+        final Partitioner partitioner = EtlMultiOutputFormat.getPartitioner(context, topic);
+        String partitionedPath = partitioner.generatePartitionedPath(context, topic,
+                                                                     encodedPartition);
 
-        partitionedPath += "/" + EtlMultiOutputFormat.getPartitioner(context, topic)
-                .generateFileName(context, topic,
-                                  leaderId, Integer.parseInt(partition), count, offset,
-                                  encodedPartition);
+        partitionedPath += "/" + partitioner.generateFileName(context, topic, leaderId,
+                                                              Integer.parseInt(partition), count,
+                                                              offset, encodedPartition);
 
         return partitionedPath + recordWriterProvider.getFilenameExtension();
     }

@@ -33,36 +33,35 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
 
     public static final String ETL_MAX_OPEN_WRITERS = "etl.writers.open.max";
-    private static Logger log = Logger.getLogger(EtlMultiOutputRecordWriter.class);
+    private static final Logger log = Logger.getLogger(EtlMultiOutputRecordWriter.class);
     private final Counter topicSkipOldCounter;
     /**
      * We need a Cache here to be able to limit the amount of open RecordWriters. Too many open
      * writers lead to memory
-     * exceptions. Please ensure that your data does not need more open files than have writers. But
+     * exceptions. Please ensure that your data does not need more open files than have writers.
+     * But
      * this should not be
      * the case if you have data with a constantly growing timestamp.
      */
     private final Cache<String, RecordWriter<IEtlKey, CamusWrapper>> dataWriters;
-    private TaskAttemptContext context;
+    private final TaskAttemptContext context;
     private Writer errorWriter = null;
     private String currentTopic = "";
     private long beginTimeStamp = 0;
-    private EtlMultiOutputCommitter committer;
+    private final EtlMultiOutputCommitter committer;
 
     public EtlMultiOutputRecordWriter(TaskAttemptContext context, EtlMultiOutputCommitter committer)
-            throws IOException,
-                   InterruptedException {
+            throws IOException, InterruptedException {
         this.context = context;
         this.committer = committer;
+        final String uniqueFile =
+                EtlMultiOutputFormat.getUniqueFile(context, EtlMultiOutputFormat.ERRORS_PREFIX, "");
         errorWriter =
-                SequenceFile.createWriter(
-                        FileSystem.get(context.getConfiguration()),
-                        context.getConfiguration(),
-                        new Path(committer.getWorkPath(),
-                                 EtlMultiOutputFormat.getUniqueFile(context,
-                                                                    EtlMultiOutputFormat.ERRORS_PREFIX,
-                                                                    "")), EtlKey.class,
-                        ExceptionWritable.class);
+                SequenceFile.createWriter(FileSystem.get(context.getConfiguration()),
+                                          context.getConfiguration(),
+                                          new Path(committer.getWorkPath(), uniqueFile),
+                                          EtlKey.class,
+                                          ExceptionWritable.class);
 
         if (EtlInputFormat.getKafkaMaxHistoricalDays(context) != -1) {
             int maxDays = EtlInputFormat.getKafkaMaxHistoricalDays(context);
@@ -155,23 +154,16 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
 
     private RecordWriter<IEtlKey, CamusWrapper> getDataRecordWriter(TaskAttemptContext context,
                                                                     String fileName,
-                                                                    CamusWrapper value)
-            throws IOException, InterruptedException {
-        RecordWriterProvider recordWriterProvider = null;
+                                                                    CamusWrapper value) {
         try {
-            //recordWriterProvider = EtlMultiOutputFormat.getRecordWriterProviderClass(context).newInstance();
             Class<RecordWriterProvider> rwp = EtlMultiOutputFormat
                     .getRecordWriterProviderClass(context);
             Constructor<RecordWriterProvider> crwp = rwp.getConstructor(TaskAttemptContext.class);
-            recordWriterProvider = crwp.newInstance(context);
-        } catch (InstantiationException e) {
-            throw new IllegalStateException(e);
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
+            RecordWriterProvider recordWriterProvider = crwp.newInstance(context);
+            return recordWriterProvider.getDataRecordWriter(context, fileName, value, committer);
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new RuntimeException(e);
         }
-        return recordWriterProvider.getDataRecordWriter(context, fileName, value, committer);
     }
 
     private static class WriterRemovalListener

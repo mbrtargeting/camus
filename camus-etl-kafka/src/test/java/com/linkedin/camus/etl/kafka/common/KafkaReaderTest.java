@@ -47,7 +47,7 @@ public class KafkaReaderTest {
         request.setOffset(0);
         request.setLatestOffset(1);
         request.setURI(new URI("http://localhost:8888"));
-        this.kafkaReader = new KafkaReader(new EtlInputFormat(), context, request, 100, 100);
+        kafkaReader = new KafkaReader(new EtlInputFormat(), context, request, 100, 100);
     }
 
     @Test(expected = KafkaReader.MetadataFetchException.class)

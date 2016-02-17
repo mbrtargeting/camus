@@ -95,15 +95,15 @@ public class EtlKeyTest {
         }
 
         public void write(DataOutput out) throws IOException {
-            UTF8.writeString(out, this.leaderId);
-            out.writeInt(this.partition);
-            out.writeLong(this.beginOffset);
-            out.writeLong(this.offset);
-            out.writeLong(this.checksum);
-            out.writeUTF(this.topic);
-            out.writeLong(this.time);
-            out.writeUTF(this.server);
-            out.writeUTF(this.service);
+            UTF8.writeString(out, leaderId);
+            out.writeInt(partition);
+            out.writeLong(beginOffset);
+            out.writeLong(offset);
+            out.writeLong(checksum);
+            out.writeUTF(topic);
+            out.writeLong(time);
+            out.writeUTF(server);
+            out.writeUTF(service);
         }
 
         public void readFields(DataInput dataInput) throws IOException {

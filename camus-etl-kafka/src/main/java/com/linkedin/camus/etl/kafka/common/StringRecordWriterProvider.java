@@ -74,7 +74,7 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
                                                                    String fileName,
                                                                    CamusWrapper camusWrapper,
                                                                    FileOutputCommitter committer)
-            throws IOException, InterruptedException {
+            throws IOException {
 
         // If recordDelimiter hasn't been initialized, do so now
         if (recordDelimiter == null) {
@@ -96,32 +96,12 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
             return new ByteRecordWriter(new DataOutputStream(codec.createOutputStream(fileOut)),
                                         recordDelimiter);
         }
-
-    /*
-    // Create a FSDataOutputStream stream that will write to path.
-    final FSDataOutputStream writer = path.getFileSystem(context.getConfiguration()).create(path);
-
-    // Return a new anonymous RecordWriter that uses the
-    // FSDataOutputStream writer to write bytes straight into path.
-    return new RecordWriter<IEtlKey, CamusWrapper>() {
-        @Override
-        public void write(IEtlKey ignore, CamusWrapper data) throws IOException {
-            String record = (String)data.getRecord() + recordDelimiter;
-            writer.write(record.getBytes());
-        }
-
-        @Override
-        public void close(TaskAttemptContext context) throws IOException, InterruptedException {
-            writer.close();
-        }
-    };
-    */
     }
 
     protected static class ByteRecordWriter extends RecordWriter<IEtlKey, CamusWrapper> {
 
-        private DataOutputStream out;
-        private String recordDelimiter;
+        private final DataOutputStream out;
+        private final String recordDelimiter;
 
         public ByteRecordWriter(DataOutputStream out, String recordDelimiter) {
             this.out = out;
