@@ -2,8 +2,6 @@ package com.linkedin.camus.etl.kafka.coders;
 
 import com.linkedin.camus.coders.Message;
 
-import java.io.IOException;
-
 /**
  * Created by michaelandrepearce on 05/04/15.
  */
@@ -19,7 +17,7 @@ public class TestMessage implements Message {
 
 
     public byte[] getPayload() {
-        return this.payload;
+        return payload;
     }
 
     public TestMessage setPayload(byte[] payload) {
@@ -28,7 +26,7 @@ public class TestMessage implements Message {
     }
 
     public byte[] getKey() {
-        return this.key;
+        return key;
     }
 
     public TestMessage setKey(byte[] key) {
@@ -37,7 +35,7 @@ public class TestMessage implements Message {
     }
 
     public String getTopic() {
-        return this.topic;
+        return topic;
     }
 
     public TestMessage setTopic(String topic) {
@@ -46,7 +44,7 @@ public class TestMessage implements Message {
     }
 
     public long getOffset() {
-        return this.offset;
+        return offset;
     }
 
     public TestMessage setOffset(long offset) {
@@ -55,7 +53,7 @@ public class TestMessage implements Message {
     }
 
     public int getPartition() {
-        return this.partition;
+        return partition;
     }
 
     public TestMessage setPartition(int partition) {
@@ -64,12 +62,7 @@ public class TestMessage implements Message {
     }
 
     public long getChecksum() {
-        return this.checksum;
-    }
-
-    @Override
-    public void validate() throws IOException {
-
+        return checksum;
     }
 
     public TestMessage setChecksum(long checksum) {

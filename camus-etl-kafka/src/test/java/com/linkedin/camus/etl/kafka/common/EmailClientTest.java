@@ -12,53 +12,53 @@
 
 package com.linkedin.camus.etl.kafka.common;
 
-import java.util.Properties;
+import com.dumbster.smtp.SimpleSmtpServer;
+import com.dumbster.smtp.SmtpMessage;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.dumbster.smtp.SimpleSmtpServer;
-import com.dumbster.smtp.SmtpMessage;
+import java.util.Properties;
 
 
 public class EmailClientTest {
 
-  protected static final int PORT = 9966;
+    protected static final int PORT = 9966;
 
-  @Test
-  public void test() {
-    String to = "some@example.com";
-    String from = "sender@example.com";
-    String subject = "subject";
-    String content = "content";
+    @Test
+    public void test() {
+        String to = "some@example.com";
+        String from = "sender@example.com";
+        String subject = "subject";
+        String content = "content";
 
-    SimpleSmtpServer server = SimpleSmtpServer.start(PORT);
+        SimpleSmtpServer server = SimpleSmtpServer.start(PORT);
 
-    Properties properties = new Properties();
-    properties.put("alert.email.host", "localhost");
-    properties.put("alert.email.port", Integer.toString(PORT));
-    properties.put("alert.email.addresses", to);
-    properties.put("alert.email.subject", subject);
-    properties.put("alert.email.sender", from);
-    properties.put("alert.on.topic.falling.behind", "true");
+        Properties properties = new Properties();
+        properties.put("alert.email.host", "localhost");
+        properties.put("alert.email.port", Integer.toString(PORT));
+        properties.put("alert.email.addresses", to);
+        properties.put("alert.email.subject", subject);
+        properties.put("alert.email.sender", from);
+        properties.put("alert.on.topic.falling.behind", "true");
 
-    EmailClient.setup(properties);
-    EmailClient.sendEmail(content);
+        EmailClient.setup(properties);
+        EmailClient.sendEmail(content);
 
-    try {
-      Thread.sleep(1000);
-    } catch(Exception e){
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
 
+        }
+
+        Assert.assertEquals(server.getReceivedEmailSize(), 1);
+        SmtpMessage message = (SmtpMessage) server.getReceivedEmail().next();
+        Assert.assertEquals(from, message.getHeaderValue("From"));
+        Assert.assertEquals(to, message.getHeaderValue("To"));
+        Assert.assertEquals(subject, message.getHeaderValue("Subject"));
+        Assert.assertEquals(content, message.getBody());
+
+        server.stop();
     }
-
-    Assert.assertEquals(server.getReceivedEmailSize(), 1);
-    SmtpMessage message = (SmtpMessage)server.getReceivedEmail().next();
-    Assert.assertEquals(from, message.getHeaderValue("From"));
-    Assert.assertEquals(to, message.getHeaderValue("To"));
-    Assert.assertEquals(subject, message.getHeaderValue("Subject"));
-    Assert.assertEquals(content, message.getBody());
-
-    server.stop();
-  }
 
 }

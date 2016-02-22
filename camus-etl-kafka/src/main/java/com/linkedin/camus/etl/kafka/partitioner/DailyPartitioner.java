@@ -15,27 +15,31 @@ import static com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat.ETL_DESTI
  *
  * The following configurations are supported:
  * <ul>
- *     <li>{@code etl.destination.path} - top-level data output directory, required</li>
- *     <li>{@code etl.destination.path.topic.sub.dir} - sub-dir to create under topic dir, defaults to {@code daily}</li>
- *     <li>{@code etl.default.timezone} - timezone of the events, defaults to {@code America/Los_Angeles}</li>
+ * <li>{@code etl.destination.path} - top-level data output directory, required</li>
+ * <li>{@code etl.destination.path.topic.sub.dir} - sub-dir to create under topic dir, defaults to
+ * {@code daily}</li>
+ * <li>{@code etl.default.timezone} - timezone of the events, defaults to {@code
+ * America/Los_Angeles}</li>
  * </ul>
  */
 public class DailyPartitioner extends BaseTimeBasedPartitioner {
 
-  private static final String DEFAULT_TOPIC_SUB_DIR = "daily";
+    private static final String DEFAULT_TOPIC_SUB_DIR = "daily";
 
-  @Override
-  public void setConf(Configuration conf) {
-    if (conf != null) {
-      String destPathTopicSubDir = conf.get(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, DEFAULT_TOPIC_SUB_DIR);
-      DateTimeZone outputTimeZone = DateTimeZone.forID(conf.get(ETL_DEFAULT_TIMEZONE, DEFAULT_TIME_ZONE));
+    @Override
+    public void setConf(Configuration conf) {
+        if (conf != null) {
+            String destPathTopicSubDir = conf
+                    .get(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, DEFAULT_TOPIC_SUB_DIR);
+            DateTimeZone outputTimeZone = DateTimeZone
+                    .forID(conf.get(ETL_DEFAULT_TIMEZONE, DEFAULT_TIME_ZONE));
 
-      long outfilePartitionMs = TimeUnit.HOURS.toMillis(24);
-      String destSubTopicPathFormat = "'" + destPathTopicSubDir + "'/YYYY/MM/dd";
-      init(outfilePartitionMs, destSubTopicPathFormat, Locale.US, outputTimeZone);
+            long outfilePartitionMs = TimeUnit.HOURS.toMillis(24);
+            String destSubTopicPathFormat = "'" + destPathTopicSubDir + "'/YYYY/MM/dd";
+            init(outfilePartitionMs, destSubTopicPathFormat, Locale.US, outputTimeZone);
+        }
+
+        super.setConf(conf);
     }
-
-    super.setConf(conf);
-  }
 
 }
