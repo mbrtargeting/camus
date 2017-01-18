@@ -1,7 +1,6 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
 import com.google.common.base.Strings;
-
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.coders.MessageDecoder;
 import com.linkedin.camus.etl.kafka.CamusJob;
@@ -13,18 +12,18 @@ import com.linkedin.camus.etl.kafka.common.EtlRequest;
 import com.linkedin.camus.etl.kafka.common.LeaderInfo;
 import com.linkedin.camus.workallocater.CamusRequest;
 import com.linkedin.camus.workallocater.WorkAllocator;
-
+import kafka.api.PartitionOffsetRequestInfo;
+import kafka.common.ErrorMapping;
+import kafka.common.TopicAndPartition;
+import kafka.javaapi.*;
+import kafka.javaapi.consumer.SimpleConsumer;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.mapreduce.InputFormat;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.JobContext;
-import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.log4j.Logger;
@@ -32,27 +31,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URI;
 import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.regex.Pattern;
-
-import kafka.api.PartitionOffsetRequestInfo;
-import kafka.common.ErrorMapping;
-import kafka.common.TopicAndPartition;
-import kafka.javaapi.OffsetRequest;
-import kafka.javaapi.OffsetResponse;
-import kafka.javaapi.PartitionMetadata;
-import kafka.javaapi.TopicMetadata;
-import kafka.javaapi.TopicMetadataRequest;
-import kafka.javaapi.consumer.SimpleConsumer;
+import java.util.*;
 
 
 /**
@@ -494,6 +473,14 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         Set<String> moveLatest = getMoveToLatestTopicsSet(context);
         String camusRequestEmailMessage = "";
         for (CamusRequest request : finalRequests) {
+          final int partition = request.getPartition();
+          if (request.getTopic().equals("bid") && partition == 35) {
+            EtlKey key = new EtlKey(request.getTopic(), ((EtlRequest) request).getLeaderId(), partition, 0,
+                    request.getLastOffset());
+            offsetKeys.put(request, key);
+          }
+
+
             if (moveLatest.contains(request.getTopic()) || moveLatest.contains("all")) {
                 log.info("Moving to latest for topic: " + request.getTopic());
                 //TODO: factor out kafka specific request functionality
