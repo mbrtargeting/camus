@@ -52,26 +52,6 @@ public class DefaultPartitioner extends Partitioner {
     }
 
     @Override
-    public String generateFileName(JobContext context, String topic, String brokerId,
-                                   int partitionId, int count,
-                                   long offset, String encodedPartition) {
-
-        return topic + "." + brokerId + "." + partitionId + "." + count + "." + offset +
-               "." + encodedPartition;
-    }
-
-    @Override
-    public String getWorkingFileName(JobContext context, String topic, String brokerId,
-                                     int partitionId,
-                                     String encodedPartition) {
-
-        return "data." + topic.replaceAll("\\.", "_") +
-               "." + brokerId +
-               "." + partitionId +
-               "." + encodedPartition;
-    }
-
-    @Override
     public void setConf(Configuration conf) {
         if (conf != null) {
             outputDateFormatter =

@@ -63,9 +63,13 @@ public abstract class Partitioner extends Configured {
      *                         above.
      * @return A path string where the output files will be moved to.
      */
-    public abstract String generateFileName(JobContext context, String topic, String brokerId,
+    public String generateFileName(JobContext context, String topic, String brokerId,
                                             int partitionId,
-                                            int count, long offset, String encodedPartition);
+                                            int count, long offset, String encodedPartition) {
+
+        return topic + "." + brokerId + "." + partitionId + "." + count + "." + offset +
+               "." + encodedPartition;
+    }
 
     /**
      * Return a string representing the target filename where data will be moved to.
@@ -79,8 +83,12 @@ public abstract class Partitioner extends Configured {
      *                         above.
      * @return A path string where the output files will be moved to.
      */
-    public abstract String getWorkingFileName(JobContext context, String topic, String brokerId,
-                                              int partitionId, String encodedPartition);
+    public String getWorkingFileName(JobContext context, String topic, String brokerId,
+                                              int partitionId, String encodedPartition) {
+
+        return "data." + topic.replace('.', '_') + "." + brokerId + "." + partitionId + "."
+               + encodedPartition;
+    }
 
 
 }
