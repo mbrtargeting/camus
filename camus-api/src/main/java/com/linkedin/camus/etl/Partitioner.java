@@ -10,6 +10,8 @@ import org.apache.hadoop.mapreduce.JobContext;
  */
 public abstract class Partitioner extends Configured {
 
+    public static String WORKING_FILE_PREFIX = "data";
+
     /**
      * Encode partition values into a string, to be embedded into the working filename.
      * Encoded values cannot use '/' or ':'.
@@ -51,29 +53,18 @@ public abstract class Partitioner extends Configured {
     /**
      * Return a string representing the target filename where data will be moved to.
      *
-     * @param context          The JobContext
-     * @param topic            The topic name
-     * @param brokerId         the brokerId
-     * @param partitionId      the partitionId
      * @param count            totalEventCount in file
      * @param offset           final offset in partition was read too.
-     * @param encodedPartition The encoded partition values. This will be the return of the the
-     *                         encodePartition() method
-     *                         above.
      * @return A path string where the output files will be moved to.
      */
-    public String generateFileName(JobContext context, String topic, String brokerId,
-                                            int partitionId,
-                                            int count, long offset, String encodedPartition) {
+    public String generateFileName(int count, long offset) {
 
-        return topic + "." + brokerId + "." + partitionId + "." + count + "." + offset +
-               "." + encodedPartition;
+        return "." + count + "." + offset;
     }
 
     /**
      * Return a string representing the target filename where data will be moved to.
      *
-     * @param context          The JobContext
      * @param topic            The topic name
      * @param brokerId         the brokerId
      * @param partitionId      the partitionId
@@ -82,10 +73,10 @@ public abstract class Partitioner extends Configured {
      *                         above.
      * @return A path string where the output files will be moved to.
      */
-    public String getWorkingFileName(JobContext context, String topic, String brokerId,
+    public String getWorkingFileName(String topic, String brokerId,
                                               int partitionId, String encodedPartition) {
 
-        return "data." + topic.replace('.', '_') + "." + brokerId + "." + partitionId + "."
+        return WORKING_FILE_PREFIX + "." + topic.replace('.', '_') + "." + brokerId + "." + partitionId + "."
                + encodedPartition;
     }
 

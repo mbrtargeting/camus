@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.linkedin.camus.etl.Partitioner.WORKING_FILE_PREFIX;
+
 
 public class EtlMultiOutputCommitter extends FileOutputCommitter {
 
@@ -50,7 +52,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
             throw new IllegalStateException(e);
         }
         workingFileMetadataPattern = Pattern.compile(
-                "data\\.([^\\.]+)\\.([\\d_]+)\\.(\\d+)\\.([^\\.]+)-m-\\d+" + recordWriterProvider
+                 "\\.([^\\.]+)\\.([\\d_]+)\\.(\\d+)\\.([^\\.]+)-m-\\d+" + recordWriterProvider
                         .getFilenameExtension());
         this.log = log;
     }
@@ -102,7 +104,7 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
             for (FileStatus f : fs.listStatus(workPath)) {
                 String file = f.getPath().getName();
                 log.info("work file: " + file);
-                if (file.startsWith("data")) {
+                if (file.startsWith(WORKING_FILE_PREFIX)) {
                     String workingFileName = file.substring(0, file.lastIndexOf("-m"));
                     EtlCounts count = counts.get(workingFileName);
                     count.setEndTime(System.currentTimeMillis());
@@ -175,18 +177,17 @@ public class EtlMultiOutputCommitter extends FileOutputCommitter {
                     "Could not extract metadata from working filename '" + file + "'");
         }
         String topic = m.group(1);
-        String leaderId = m.group(2);
-        String partition = m.group(3);
         String encodedPartition = m.group(4);
 
         final Partitioner partitioner = EtlMultiOutputFormat.getPartitioner(context, topic);
         String partitionedPath = partitioner.generatePartitionedPath(context, topic,
                                                                      encodedPartition);
 
-        partitionedPath += "/" + partitioner.generateFileName(context, topic, leaderId,
-                                                              Integer.parseInt(partition), count,
-                                                              offset, encodedPartition);
+        final int extensionIndex = file.lastIndexOf(recordWriterProvider.getFilenameExtension());
 
-        return partitionedPath + recordWriterProvider.getFilenameExtension();
+        return partitionedPath + "/" +
+               file.substring(0, extensionIndex) +
+               partitioner.generateFileName(count, offset) +
+               recordWriterProvider.getFilenameExtension();
     }
 }

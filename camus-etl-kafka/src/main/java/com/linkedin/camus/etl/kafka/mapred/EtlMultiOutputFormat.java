@@ -97,7 +97,7 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public static String getWorkingFileName(JobContext context, EtlKey key) throws IOException {
         Partitioner partitioner = getPartitioner(context, key.getTopic());
         return partitioner
-                .getWorkingFileName(context, key.getTopic(), key.getLeaderId(), key.getPartition(),
+                .getWorkingFileName(key.getTopic(), key.getLeaderId(), key.getPartition(),
                                     partitioner.encodePartition(context, key));
     }
 

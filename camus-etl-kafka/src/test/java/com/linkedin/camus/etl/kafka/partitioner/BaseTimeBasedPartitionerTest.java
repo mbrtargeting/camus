@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
+import static com.linkedin.camus.etl.Partitioner.WORKING_FILE_PREFIX;
 import static org.junit.Assert.assertEquals;
 
 public class BaseTimeBasedPartitionerTest {
@@ -33,14 +34,14 @@ public class BaseTimeBasedPartitionerTest {
     @Test
     public void testGenerateFileName() throws Exception {
         String fileName = underTest
-                .generateFileName(null, "tpc", "brk1", 1, 2, 45330016, "1388538000000");
-        assertEquals("tpc.brk1.1.2.45330016.1388538000000", fileName);
+                .generateFileName(2, 45330016);
+        assertEquals(".2.45330016", fileName);
     }
 
     @Test
     public void testGetWorkingFileName() throws Exception {
         String workingFileName = underTest
-                .getWorkingFileName(null, "tpc", "brk1", 1, "1388538000000");
+                .getWorkingFileName("tpc", "brk1", 1, "1388538000000");
         assertEquals("data.tpc.brk1.1.1388538000000", workingFileName);
 
     }

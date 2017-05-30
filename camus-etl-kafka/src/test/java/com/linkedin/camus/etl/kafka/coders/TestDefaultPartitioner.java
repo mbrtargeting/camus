@@ -31,9 +31,8 @@ public class TestDefaultPartitioner {
 
         actualResult =
                 testPartitioner
-                        .generateFileName(testJob, "testTopic", "testBrokerId", 123, 100, 500,
-                                          "1406777693000");
-        expectedResult = "testTopic.testBrokerId.123.100.500.1406777693000";
+                        .generateFileName(100, 500);
+        expectedResult = ".100.500";
 
         assertTrue(actualResult.equals(expectedResult));
     }
