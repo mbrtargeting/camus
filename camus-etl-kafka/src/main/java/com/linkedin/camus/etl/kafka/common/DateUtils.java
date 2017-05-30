@@ -24,7 +24,7 @@ public class DateUtils {
     public static long getPartition(long timeGranularityMs, long timestamp,
                                     DateTimeZone outputDateTimeZone) {
         long adjustedTimeStamp = outputDateTimeZone.convertUTCToLocal(timestamp);
-        long partitionedTime = (adjustedTimeStamp / timeGranularityMs) * timeGranularityMs;
+        long partitionedTime = getPartition(timeGranularityMs, adjustedTimeStamp);
         return outputDateTimeZone.convertLocalToUTC(partitionedTime, false);
     }
 

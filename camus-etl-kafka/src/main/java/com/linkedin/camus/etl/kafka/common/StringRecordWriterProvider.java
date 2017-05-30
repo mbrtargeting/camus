@@ -78,11 +78,10 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
                         .getUniqueFile(context, fileName, getFilenameExtension()));
 
         FileSystem fs = path.getFileSystem(context.getConfiguration());
+        final FSDataOutputStream fileOut = fs.create(path, false);
         if (!isCompressed) {
-            FSDataOutputStream fileOut = fs.create(path, false);
             return new ByteRecordWriter(fileOut, recordDelimiter);
         } else {
-            FSDataOutputStream fileOut = fs.create(path, false);
             return new ByteRecordWriter(new DataOutputStream(codec.createOutputStream(fileOut)),
                                         recordDelimiter);
         }
