@@ -359,7 +359,7 @@ public class CamusJob extends Configured implements Tool {
             fs.delete(stat.getPath(), true);
         }
 
-        // removing failed exectutions if we need room
+        // removing failed executions if we need room
         if (limit < currentCount) {
             FileStatus[] failedExecutions = fs.listStatus(execBasePath, new PathFilter() {
 

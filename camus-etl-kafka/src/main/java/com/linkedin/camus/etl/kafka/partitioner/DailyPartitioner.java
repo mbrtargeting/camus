@@ -10,7 +10,7 @@ import static com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat.ETL_DEFAU
 import static com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat.ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY;
 
 /**
- * Partitions incoming data into daily partitions, and generates pathnames of the form:
+ * Partitions incoming data into daily partitions, and generates path names of the form:
  * {@code etl.destination.path/topic-name/recent/YYYY/MM/dd}.
  *
  * The following configurations are supported:

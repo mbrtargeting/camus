@@ -13,7 +13,7 @@ import static com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat.ETL_DESTI
 import static com.linkedin.camus.etl.kafka.mapred.EtlMultiOutputFormat.ETL_OUTPUT_FILE_TIME_PARTITION_MINS;
 
 /**
- * Partitions incoming data into time based partitions, and generates pathnames of some configured
+ * Partitions incoming data into time based partitions, and generates path names of some configured
  * form.
  *
  * The following configurations are supported:

@@ -31,8 +31,7 @@ public abstract class Partitioner extends Configured {
      * be moved.
      *
      * For example, if you were using Hive style partitioning, a timestamp based partitioning
-     * scheme
-     * would return
+     * scheme would return:
      * topic-name/year=2012/month=02/day=04/hour=12
      *
      * The return of this method will be prepended with the value of the property
