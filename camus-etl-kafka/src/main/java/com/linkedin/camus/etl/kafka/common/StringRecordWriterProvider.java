@@ -11,8 +11,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.DefaultCodec;
-import org.apache.hadoop.io.compress.GzipCodec;
-import org.apache.hadoop.io.compress.SnappyCodec;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
@@ -48,14 +46,9 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
         isCompressed = FileOutputFormat.getCompressOutput(context);
 
         if (isCompressed) {
-            Class<? extends CompressionCodec> codecClass;
-            if ("snappy".equals(EtlMultiOutputFormat.getEtlOutputCodec(context))) {
-                codecClass = SnappyCodec.class;
-            } else if ("gzip".equals((EtlMultiOutputFormat.getEtlOutputCodec(context)))) {
-                codecClass = GzipCodec.class;
-            } else {
-                codecClass = DefaultCodec.class;
-            }
+            // find the right codec
+            final Class<? extends CompressionCodec> codecClass =
+                    FileOutputFormat.getOutputCompressorClass(context, DefaultCodec.class);
             codec = ReflectionUtils.newInstance(codecClass, conf);
             extension = codec.getDefaultExtension();
         }

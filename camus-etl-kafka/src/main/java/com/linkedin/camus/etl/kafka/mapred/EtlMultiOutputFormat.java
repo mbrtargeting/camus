@@ -45,8 +45,6 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
             = "etl.output.file.time.partition.mins";
     public static final String KAFKA_MONITOR_TIME_GRANULARITY_MS = "kafka.monitor.time.granularity";
     public static final String ETL_DEFAULT_PARTITIONER_CLASS = "etl.partitioner.class";
-    public static final String ETL_OUTPUT_CODEC = "etl.output.codec";
-    public static final String ETL_DEFAULT_OUTPUT_CODEC = "deflate";
     public static final String
             ETL_RECORD_WRITER_PROVIDER_CLASS
             = "etl.record.writer.provider.class";
@@ -82,11 +80,6 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
     public static long getMonitorTimeGranularityMs(JobContext job) {
         return job.getConfiguration().getInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, 10) * 60000L;
-    }
-
-    public static String getEtlOutputCodec(JobContext job) {
-        return job.getConfiguration().get(ETL_OUTPUT_CODEC, ETL_DEFAULT_OUTPUT_CODEC);
-
     }
 
     public static int getEtlOutputFileTimePartitionMins(JobContext job) {
