@@ -46,9 +46,6 @@ public class SequenceFileRecordWriterProvider implements RecordWriterProvider {
 
     }
 
-    // TODO: Make this configurable somehow.
-    // To do this, we'd have to make SequenceFileRecordWriterProvider have an
-    // init(JobContext context) method signature that EtlMultiOutputFormat would always call.
     @Override
     public String getFilenameExtension() {
         return "";

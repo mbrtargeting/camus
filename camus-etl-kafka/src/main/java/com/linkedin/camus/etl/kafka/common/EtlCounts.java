@@ -19,7 +19,6 @@ public class EtlCounts {
     private static final String FIRST_TIMESTAMP = "firstTimestamp";
     private static final String LAST_TIMESTAMP = "lastTimestamp";
     private static final String ERROR_COUNT = "errorCount";
-    private transient static final Random RANDOM = new Random();
     protected HashMap<String, Source> counts;
     private String topic;
     private long startTime;
@@ -30,9 +29,6 @@ public class EtlCounts {
     private long firstTimestamp = Long.MAX_VALUE;
     private transient EtlKey lastKey;
     private transient int eventCount = 0;
-
-    public EtlCounts() {
-    }
 
     public EtlCounts(String topic, long granularity, long currentTime) {
         this.topic = topic;
@@ -45,17 +41,8 @@ public class EtlCounts {
         this(topic, granularity, System.currentTimeMillis());
     }
 
-    public EtlCounts(EtlCounts other) {
-        this(other.topic, other.granularity, other.startTime);
-        this.counts = other.counts;
-    }
-
     public HashMap<String, Source> getCounts() {
         return counts;
-    }
-
-    public void setCounts(HashMap<String, Source> counts) {
-        this.counts = counts;
     }
 
     public long getEndTime() {
@@ -118,16 +105,8 @@ public class EtlCounts {
         return eventCount;
     }
 
-    public void setEventCount(int eventCount) {
-        this.eventCount = eventCount;
-    }
-
     public EtlKey getLastKey() {
         return lastKey;
-    }
-
-    public void setLastKey(EtlKey lastKey) {
-        this.lastKey = lastKey;
     }
 
     public void incrementMonitorCount(EtlKey key) {

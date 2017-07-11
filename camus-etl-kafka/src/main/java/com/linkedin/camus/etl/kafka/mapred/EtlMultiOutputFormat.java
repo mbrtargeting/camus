@@ -2,7 +2,6 @@ package com.linkedin.camus.etl.kafka.mapred;
 
 import com.linkedin.camus.etl.Partitioner;
 import com.linkedin.camus.etl.RecordWriterProvider;
-import com.linkedin.camus.etl.kafka.common.DateUtils;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.StringRecordWriterProvider;
 import com.linkedin.camus.etl.kafka.partitioner.DefaultPartitioner;
@@ -15,7 +14,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.log4j.Logger;
-import org.joda.time.format.DateTimeFormatter;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -42,7 +40,6 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public static final String ETL_RUN_MOVE_DATA = "etl.run.move.data";
     public static final String ETL_RUN_TRACKING_POST = "etl.run.tracking.post";
     public static final String ETL_DEFAULT_TIMEZONE = "etl.default.timezone";
-    public static final String ETL_DEFLATE_LEVEL = "etl.deflate.level";
     public static final String
             ETL_OUTPUT_FILE_TIME_PARTITION_MINS
             = "etl.output.file.time.partition.mins";
@@ -53,11 +50,8 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
     public static final String
             ETL_RECORD_WRITER_PROVIDER_CLASS
             = "etl.record.writer.provider.class";
-    public static final DateTimeFormatter FILE_DATE_FORMATTER = DateUtils
-            .getDateTimeFormatter("YYYYMMddHH");
     public static final String OFFSET_PREFIX = "offsets";
     public static final String ERRORS_PREFIX = "errors";
-    public static final String COUNTS_PREFIX = "counts";
     public static final String REQUESTS_FILE = "requests.previous";
     private static final String ETL_STAGING_PATH = "etl.staging.path";
     private static EtlMultiOutputCommitter committer = null;
@@ -67,34 +61,10 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
     private static final Logger log = Logger.getLogger(EtlMultiOutputFormat.class);
 
-    public static void setRecordWriterProviderClass(JobContext job,
-                                                    Class<RecordWriterProvider> recordWriterProviderClass) {
-        job.getConfiguration().setClass(ETL_RECORD_WRITER_PROVIDER_CLASS, recordWriterProviderClass,
-                                        RecordWriterProvider.class);
-    }
-
     @SuppressWarnings("unchecked")
     public static Class<RecordWriterProvider> getRecordWriterProviderClass(JobContext job) {
         return (Class<RecordWriterProvider>) job.getConfiguration()
                 .getClass(ETL_RECORD_WRITER_PROVIDER_CLASS, StringRecordWriterProvider.class);
-    }
-
-    public static RecordWriterProvider getRecordWriterProvider(JobContext job) {
-        try {
-            return (RecordWriterProvider) job.getConfiguration()
-                    .getClass(ETL_RECORD_WRITER_PROVIDER_CLASS, StringRecordWriterProvider.class)
-                    .newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void setDefaultTimeZone(JobContext job, String tz) {
-        job.getConfiguration().set(ETL_DEFAULT_TIMEZONE, tz);
-    }
-
-    public static String getDefaultTimeZone(JobContext job) {
-        return job.getConfiguration().get(ETL_DEFAULT_TIMEZONE, "America/Los_Angeles");
     }
 
     public static void setDestinationPath(JobContext job, Path dest) {
@@ -105,33 +75,13 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         return new Path(job.getConfiguration().get(ETL_STAGING_PATH));
     }
 
-    public static void setDestPathTopicSubDir(JobContext job, String subPath) {
-        job.getConfiguration().set(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, subPath);
-    }
-
     public static Path getDestPathTopicSubDir(JobContext job) {
         return new Path(
                 job.getConfiguration().get(ETL_DESTINATION_PATH_TOPIC_SUBDIRECTORY, "hourly"));
     }
 
-    public static void setMonitorTimeGranularityMins(JobContext job, int mins) {
-        job.getConfiguration().setInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, mins);
-    }
-
-    public static int getMonitorTimeGranularityMins(JobContext job) {
-        return job.getConfiguration().getInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, 10);
-    }
-
     public static long getMonitorTimeGranularityMs(JobContext job) {
         return job.getConfiguration().getInt(KAFKA_MONITOR_TIME_GRANULARITY_MS, 10) * 60000L;
-    }
-
-    public static void setEtlDeflateLevel(JobContext job, int val) {
-        job.getConfiguration().setInt(ETL_DEFLATE_LEVEL, val);
-    }
-
-    public static void setEtlOutputCodec(JobContext job, String codec) {
-        job.getConfiguration().set(ETL_OUTPUT_CODEC, codec);
     }
 
     public static String getEtlOutputCodec(JobContext job) {
@@ -139,32 +89,16 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
 
     }
 
-    public static int getEtlDeflateLevel(JobContext job) {
-        return job.getConfiguration().getInt(ETL_DEFLATE_LEVEL, 6);
-    }
-
     public static int getEtlOutputFileTimePartitionMins(JobContext job) {
         return job.getConfiguration().getInt(ETL_OUTPUT_FILE_TIME_PARTITION_MINS, 60);
-    }
-
-    public static void setEtlOutputFileTimePartitionMins(JobContext job, int val) {
-        job.getConfiguration().setInt(ETL_OUTPUT_FILE_TIME_PARTITION_MINS, val);
     }
 
     public static boolean isRunMoveData(JobContext job) {
         return job.getConfiguration().getBoolean(ETL_RUN_MOVE_DATA, true);
     }
 
-    public static void setRunMoveData(JobContext job, boolean value) {
-        job.getConfiguration().setBoolean(ETL_RUN_MOVE_DATA, value);
-    }
-
     public static boolean isRunTrackingPost(JobContext job) {
         return job.getConfiguration().getBoolean(ETL_RUN_TRACKING_POST, false);
-    }
-
-    public static void setRunTrackingPost(JobContext job, boolean value) {
-        job.getConfiguration().setBoolean(ETL_RUN_TRACKING_POST, value);
     }
 
     public static String getWorkingFileName(JobContext context, EtlKey key) throws IOException {
@@ -172,10 +106,6 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         return partitioner
                 .getWorkingFileName(context, key.getTopic(), key.getLeaderId(), key.getPartition(),
                                     partitioner.encodePartition(context, key));
-    }
-
-    public static void setDefaultPartitioner(JobContext job, Class<?> cls) {
-        job.getConfiguration().setClass(ETL_DEFAULT_PARTITIONER_CLASS, cls, Partitioner.class);
     }
 
     public static Partitioner getDefaultPartitioner(JobContext job) {
@@ -194,10 +124,6 @@ public class EtlMultiOutputFormat extends FileOutputFormat<EtlKey, Object> {
         final Partitioner defaultPartitioner = getDefaultPartitioner(job);
         partitionersByTopic.put(customPartitionerProperty, defaultPartitioner);
         return defaultPartitioner;
-    }
-
-    public static void resetPartitioners() {
-        partitionersByTopic = new HashMap<>();
     }
 
     @Override

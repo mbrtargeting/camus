@@ -139,10 +139,6 @@ public class EtlKey implements WritableComparable<EtlKey>, IEtlKey {
         return offset;
     }
 
-    public void setOffset(long offset) {
-        this.offset = offset;
-    }
-
     public long getChecksum() {
         return checksum;
     }

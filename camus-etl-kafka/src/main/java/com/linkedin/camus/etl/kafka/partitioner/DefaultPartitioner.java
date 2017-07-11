@@ -29,7 +29,6 @@ import org.joda.time.format.DateTimeFormatter;
 public class DefaultPartitioner extends Partitioner {
 
     protected static final String OUTPUT_DATE_FORMAT = "YYYY/MM/dd/HH";
-    //protected DateTimeZone outputDateTimeZone = null;
     protected DateTimeFormatter outputDateFormatter = null;
 
     @Override
