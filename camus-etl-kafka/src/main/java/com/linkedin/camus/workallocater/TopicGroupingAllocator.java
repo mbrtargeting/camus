@@ -29,8 +29,8 @@ public class TopicGroupingAllocator extends BaseAllocator {
         int numTasks = context.getConfiguration().getInt("mapred.map.tasks", 30);
         List<InputSplit> kafkaETLSplits = new ArrayList<>();
 
-        for (int i = 0; i < numTasks; i++) {
-            if (requests.size() > 0) {
+        if (requests.size() > 0) {
+            for (int i = 0; i < numTasks; i++) {
                 kafkaETLSplits.add(new EtlSplit());
             }
         }

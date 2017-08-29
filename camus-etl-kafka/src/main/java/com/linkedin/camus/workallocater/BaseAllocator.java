@@ -47,8 +47,8 @@ public class BaseAllocator extends WorkAllocator {
 
         List<InputSplit> kafkaETLSplits = new ArrayList<>();
 
-        for (int i = 0; i < numTasks; i++) {
-            if (requests.size() > 0) {
+        if (requests.size() > 0) {
+            for (int i = 0; i < numTasks; i++) {
                 kafkaETLSplits.add(new EtlSplit());
             }
         }

@@ -252,8 +252,8 @@ public class CamusJob extends Configured implements Tool {
         return job.getConfiguration().getInt(KAFKA_FETCH_BUFFER_SIZE, 1024 * 1024);
     }
 
-    public static boolean getLog4jConfigure(JobContext job) {
-        return job.getConfiguration().getBoolean(LOG4J_CONFIGURATION, false);
+    public static String getLog4jConfigure(JobContext job) {
+        return job.getConfiguration().get(LOG4J_CONFIGURATION);
     }
 
     public static String getReporterClass(JobContext job) {
@@ -304,8 +304,8 @@ public class CamusJob extends Configured implements Tool {
         EmailClient.setup(props);
 
         Job job = createJob(props);
-        if (getLog4jConfigure(job)) {
-            DOMConfigurator.configure("log4j.xml");
+        if (getLog4jConfigure(job) != null) {
+            DOMConfigurator.configure(getLog4jConfigure(job));
         }
         FileSystem fs = FileSystem.get(job.getConfiguration());
 
