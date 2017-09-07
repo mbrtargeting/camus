@@ -52,9 +52,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
     private List<CamusRequest> groupSmallRequest(List<CamusRequest> requests, JobContext context) {
         List<CamusRequest> finalRequests = new ArrayList<>();
 
-        Map<String, List<CamusRequest>>
-                requestsTopicMap
-                = new HashMap<>();
+        Map<String, List<CamusRequest>> requestsTopicMap = new HashMap<>();
         long totalEstimatedDataSize = 0;
 
         for (CamusRequest cr : requests) {
