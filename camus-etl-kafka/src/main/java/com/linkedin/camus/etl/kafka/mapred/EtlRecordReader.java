@@ -37,7 +37,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
 
     private final EtlKey key = new EtlKey();
     protected TaskAttemptContext context;
-    EtlSplit split;
+    private EtlSplit split;
     private final EtlInputFormat inputFormat;
     private Mapper<EtlKey, Writable, EtlKey, Writable>.Context mapperContext;
     private KafkaReader reader;
@@ -362,7 +362,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         }
     }
 
-    public void setServerService() {
+    private void setServerService() {
         if (ignoreServerServiceList.contains(key.getTopic()) || ignoreServerServiceList
                 .contains("all")) {
             key.setServer(DEFAULT_SERVER);
