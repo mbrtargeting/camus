@@ -32,7 +32,6 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     private static final String PRINT_MAX_DECODER_EXCEPTIONS = "max.decoder.exceptions.to.print";
     private static final String DEFAULT_SERVER = "server";
     private static final String DEFAULT_SERVICE = "service";
-    private static final int RECORDS_TO_READ_AFTER_TIMEOUT = 5;
     private static final Logger log = Logger.getLogger(EtlRecordReader.class);
 
     private final EtlKey key = new EtlKey();
@@ -180,8 +179,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
 
-        if (System.currentTimeMillis() > maxPullTime
-            && numRecordsReadForCurrentPartition >= RECORDS_TO_READ_AFTER_TIMEOUT) {
+        if (System.currentTimeMillis() > maxPullTime) {
             String maxMsg = "at " + new DateTime(curTimeStamp).toString();
             log.info("Kafka pull time limit reached");
             statusMsg.append(" max read ").append(maxMsg);
