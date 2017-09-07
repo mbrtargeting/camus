@@ -481,12 +481,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         // Get the latest offsets and generate the EtlRequests
         finalRequests = fetchLatestOffsetAndCreateEtlRequests(context, offsetRequestInfo);
 
-        Collections.sort(finalRequests, new Comparator<CamusRequest>() {
-            @Override
-            public int compare(CamusRequest r1, CamusRequest r2) {
-                return r1.getTopic().compareTo(r2.getTopic());
-            }
-        });
+        finalRequests.sort(Comparator.comparing(CamusRequest::getTopic));
 
         writeRequests(finalRequests, context);
         Map<CamusRequest, EtlKey> offsetKeys = getPreviousOffsets(

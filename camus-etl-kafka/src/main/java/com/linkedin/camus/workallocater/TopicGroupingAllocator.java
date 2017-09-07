@@ -37,7 +37,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
 
         List<CamusRequest> groupedRequests = groupSmallRequest(requests, context);
 
-        reverseSortRequests(groupedRequests);
+        groupedRequests.sort((r1, r2) -> r1.estimateDataSize() > r2.estimateDataSize() ? -1 : 1); // reverse sort
 
         for (CamusRequest r : groupedRequests) {
             EtlSplit split = getSmallestMultiSplit(kafkaETLSplits);
