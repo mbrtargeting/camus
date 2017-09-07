@@ -192,11 +192,6 @@ public class TopicGroupingAllocator extends BaseAllocator {
         }
 
         @Override
-        public long estimateDataSize(long endTime) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public Iterator<CamusRequest> iterator() {
             return requests.iterator();
         }

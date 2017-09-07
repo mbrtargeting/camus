@@ -57,12 +57,4 @@ public interface CamusRequest extends Writable {
 
     void setAvgMsgSize(long size);
 
-    /**
-     * Estimates the request size in bytes by connecting to the broker and
-     * querying for the offset that bets matches the endTime.
-     *
-     * @param endTime The time in millisec
-     */
-    long estimateDataSize(long endTime);
-
 }

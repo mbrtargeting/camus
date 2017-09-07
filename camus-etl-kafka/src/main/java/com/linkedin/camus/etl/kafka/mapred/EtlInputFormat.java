@@ -66,9 +66,6 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
     public static final String KAFKA_MOVE_TO_LAST_OFFSET_LIST = "kafka.move.to.last.offset.list";
     public static final String KAFKA_MOVE_TO_EARLIEST_OFFSET = "kafka.move.to.earliest.offset";
 
-    public static final String KAFKA_CLIENT_BUFFER_SIZE = "kafka.client.buffer.size";
-    public static final String KAFKA_CLIENT_SO_TIMEOUT = "kafka.client.so.timeout";
-
     public static final String KAFKA_MAX_PULL_HRS = "kafka.max.pull.hrs";
     public static final String KAFKA_MAX_PULL_MINUTES_PER_TASK = "kafka.max.pull.minutes.per.task";
     public static final String KAFKA_MAX_HISTORICAL_DAYS = "kafka.max.historical.days";
@@ -100,10 +97,6 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         EtlInputFormat.log = log;
     }
 
-    public static void setWorkAllocator(JobContext job, Class<WorkAllocator> val) {
-        job.getConfiguration().setClass(CAMUS_WORK_ALLOCATOR_CLASS, val, WorkAllocator.class);
-    }
-
     public static WorkAllocator getWorkAllocator(JobContext job) {
         try {
             return (WorkAllocator) job.getConfiguration().getClass(
@@ -114,90 +107,37 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         }
     }
 
-    public static void setMoveToLatestTopics(JobContext job, String val) {
-        job.getConfiguration().set(KAFKA_MOVE_TO_LAST_OFFSET_LIST, val);
-    }
-
     public static String[] getMoveToLatestTopics(JobContext job) {
         return job.getConfiguration().getStrings(KAFKA_MOVE_TO_LAST_OFFSET_LIST);
-    }
-
-    public static void setKafkaClientBufferSize(JobContext job, int val) {
-        job.getConfiguration().setInt(KAFKA_CLIENT_BUFFER_SIZE, val);
-    }
-
-    public static int getKafkaClientBufferSize(JobContext job) {
-        return job.getConfiguration().getInt(KAFKA_CLIENT_BUFFER_SIZE, 2 * 1024 * 1024);
-    }
-
-    public static void setKafkaClientTimeout(JobContext job, int val) {
-        job.getConfiguration().setInt(KAFKA_CLIENT_SO_TIMEOUT, val);
-    }
-
-    public static int getKafkaClientTimeout(JobContext job) {
-        return job.getConfiguration().getInt(KAFKA_CLIENT_SO_TIMEOUT, 60000);
-    }
-
-    public static void setKafkaMaxPullHrs(JobContext job, int val) {
-        job.getConfiguration().setInt(KAFKA_MAX_PULL_HRS, val);
     }
 
     public static int getKafkaMaxPullHrs(JobContext job) {
         return job.getConfiguration().getInt(KAFKA_MAX_PULL_HRS, -1);
     }
 
-    public static void setKafkaMaxPullMinutesPerTask(JobContext job, int val) {
-        job.getConfiguration().setInt(KAFKA_MAX_PULL_MINUTES_PER_TASK, val);
-    }
-
     public static int getKafkaMaxPullMinutesPerTask(JobContext job) {
         return job.getConfiguration().getInt(KAFKA_MAX_PULL_MINUTES_PER_TASK, -1);
-    }
-
-    public static void setKafkaMaxHistoricalDays(JobContext job, int val) {
-        job.getConfiguration().setInt(KAFKA_MAX_HISTORICAL_DAYS, val);
     }
 
     public static int getKafkaMaxHistoricalDays(JobContext job) {
         return job.getConfiguration().getInt(KAFKA_MAX_HISTORICAL_DAYS, -1);
     }
 
-    public static void setKafkaBlacklistTopic(JobContext job, String val) {
-        job.getConfiguration().set(KAFKA_BLACKLIST_TOPIC, val);
-    }
-
     public static Collection<String> getKafkaBlacklistTopic(JobContext job) {
         return job.getConfiguration().getStringCollection(KAFKA_BLACKLIST_TOPIC);
-    }
-
-    public static void setKafkaWhitelistTopic(JobContext job, String val) {
-        job.getConfiguration().set(KAFKA_WHITELIST_TOPIC, val);
     }
 
     public static Collection<String> getKafkaWhitelistTopic(JobContext job) {
         return job.getConfiguration().getStringCollection(KAFKA_WHITELIST_TOPIC);
     }
 
-    public static void setEtlIgnoreSchemaErrors(JobContext job, boolean val) {
-        job.getConfiguration().setBoolean(ETL_IGNORE_SCHEMA_ERRORS, val);
-    }
-
     public static boolean getEtlIgnoreSchemaErrors(JobContext job) {
         return job.getConfiguration().getBoolean(ETL_IGNORE_SCHEMA_ERRORS, false);
-    }
-
-    public static void setEtlAuditIgnoreServiceTopicList(JobContext job, String topics) {
-        job.getConfiguration().set(ETL_AUDIT_IGNORE_SERVICE_TOPIC_LIST, topics);
     }
 
     public static String[] getEtlAuditIgnoreServiceTopicList(JobContext job) {
         return job.getConfiguration().getStrings(ETL_AUDIT_IGNORE_SERVICE_TOPIC_LIST, "");
     }
-
-    public static void setMessageDecoderClass(JobContext job, Class<MessageDecoder> cls) {
-        job.getConfiguration().setClass(CAMUS_MESSAGE_DECODER_CLASS, cls, MessageDecoder.class);
-    }
-
 
     @SuppressWarnings("unchecked")
     public static Class<MessageDecoder> getMessageDecoderClass(JobContext job) {

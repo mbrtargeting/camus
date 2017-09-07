@@ -302,15 +302,6 @@ public class EtlRequest implements CamusRequest {
         return (endOffset - offset) * avgMsgSize;
     }
 
-    /* (non-Javadoc)
-     * @see com.linkedin.camus.etl.kafka.common.CamusRequest#estimateDataSize(long)
-     */
-    @Override
-    public long estimateDataSize(long endTime) {
-        long endOffset = getLastOffset(endTime);
-        return (endOffset - offset) * avgMsgSize;
-    }
-
     @Override
     public void readFields(DataInput in) throws IOException {
         topic = UTF8.readString(in);
