@@ -25,8 +25,7 @@ public class EtlSplit extends InputSplit implements Writable {
         for (int i = 0; i < size; i++) {
             CamusRequest r = new EtlRequest();
             r.readFields(in);
-            requests.add(r);
-            length += r.estimateDataSize();
+            addRequest(r);
         }
     }
 
