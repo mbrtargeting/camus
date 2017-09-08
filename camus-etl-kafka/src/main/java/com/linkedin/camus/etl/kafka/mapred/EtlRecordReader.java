@@ -198,7 +198,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
 
             logPartitionSummary();
 
-            reader = null;
+            return false;
         }
 
         while (true) {
