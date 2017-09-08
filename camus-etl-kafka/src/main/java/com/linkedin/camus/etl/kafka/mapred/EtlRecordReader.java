@@ -165,6 +165,18 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         return value;
     }
 
+    private void logPartitionSummary() {
+        String timeSpentOnPartition = periodFormatter.print(
+                new Duration(startTime, System.currentTimeMillis()).toPeriod());
+        log.info("Time spent on this partition = " + timeSpentOnPartition);
+        log.info("Num of records read for this partition = "
+                + numRecordsReadForCurrentPartition);
+        log.info("Bytes read for this partition = " + bytesReadForCurrentPartition);
+        log.info("Actual avg size for this partition = "
+                + bytesReadForCurrentPartition
+                / numRecordsReadForCurrentPartition);
+    }
+
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
 
@@ -186,13 +198,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
             mapperContext.write(key, new ExceptionWritable(topicNotFullyPulledMsg));
             log.warn(topicNotFullyPulledMsg);
 
-            String timeSpentOnPartition = periodFormatter
-                    .print(new Duration(startTime, System.currentTimeMillis()).toPeriod());
-            String timeSpentOnTopicMsg =
-                    String.format("Time spent on topic %s:%d = %s", key.getTopic(),
-                                  key.getPartition(), timeSpentOnPartition);
-            mapperContext.write(key, new ExceptionWritable(timeSpentOnTopicMsg));
-            log.info(timeSpentOnTopicMsg);
+            logPartitionSummary();
 
             reader = null;
         }
@@ -202,17 +208,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
 
                 if (reader == null || !reader.hasNext()) {
                     if (numRecordsReadForCurrentPartition != 0) {
-                        String timeSpentOnPartition =
-                                periodFormatter.print(new Duration(startTime,
-                                                                   System.currentTimeMillis())
-                                                              .toPeriod());
-                        log.info("Time spent on this partition = " + timeSpentOnPartition);
-                        log.info("Num of records read for this partition = "
-                                 + numRecordsReadForCurrentPartition);
-                        log.info("Bytes read for this partition = " + bytesReadForCurrentPartition);
-                        log.info("Actual avg size for this partition = "
-                                 + bytesReadForCurrentPartition
-                                   / numRecordsReadForCurrentPartition);
+                        logPartitionSummary();
                     }
 
                     EtlRequest request = (EtlRequest) split.popRequest();
