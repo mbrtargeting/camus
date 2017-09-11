@@ -427,7 +427,7 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
         Map<CamusRequest, EtlKey> offsetKeys = getPreviousOffsets(
                 FileInputFormat.getInputPaths(context), context);
         Set<String> moveLatest = getMoveToLatestTopicsSet(context);
-        String camusRequestEmailMessage = "";
+        StringBuilder camusRequestEmailMessage = new StringBuilder();
         for (CamusRequest request : finalRequests) {
             if (moveLatest.contains(request.getTopic()) || moveLatest.contains("all")) {
                 log.info("Moving to latest for topic: " + request.getTopic());
@@ -490,14 +490,15 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
                 }
             } else if (3 * (request.getOffset() - request.getEarliestOffset())
                        < request.getLastOffset() - request.getOffset()) {
-                camusRequestEmailMessage +=
-                        "The current offset is too close to the earliest offset, Camus might be falling behind: "
-                        + request + "\n";
+                camusRequestEmailMessage
+                        .append("The current offset is too close to the earliest offset, Camus might be falling behind: ")
+                        .append(request)
+                        .append("\n");
             }
             log.info(request);
         }
-        if (!Strings.isNullOrEmpty(camusRequestEmailMessage)) {
-            EmailClient.sendEmail(camusRequestEmailMessage);
+        if (camusRequestEmailMessage.length() > 0) {
+            EmailClient.sendEmail(camusRequestEmailMessage.toString());
         }
 
         writePrevious(offsetKeys.values(), context);
