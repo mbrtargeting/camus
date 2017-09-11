@@ -490,10 +490,13 @@ public class EtlInputFormat extends InputFormat<EtlKey, CamusWrapper> {
                 }
             } else if (3 * (request.getOffset() - request.getEarliestOffset())
                        < request.getLastOffset() - request.getOffset()) {
-                camusRequestEmailMessage
-                        .append("The current offset is too close to the earliest offset, Camus might be falling behind: ")
-                        .append(request)
-                        .append("\n");
+
+                if(Strings.isNullOrEmpty(camusRequestEmailMessage.toString())) {
+                    camusRequestEmailMessage.append("The current offset is too close to the earliest offset," +
+                            " Camus might be falling behind:\n\n");
+                }
+
+                camusRequestEmailMessage.append(request).append("\n");
             }
             log.info(request);
         }
