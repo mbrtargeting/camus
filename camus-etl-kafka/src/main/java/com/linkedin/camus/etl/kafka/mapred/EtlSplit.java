@@ -17,7 +17,10 @@ import java.util.Queue;
 public class EtlSplit extends InputSplit implements Writable {
 
     // Sort by topic, so that requests from the same topic are processed after each other
-    private final Comparator<CamusRequest> priorityComparator = Comparator.comparing(CamusRequest::getTopic);
+    // Then reverse sort by size, so that the biggest request are processed first, so that
+    // partitions which are lagging mostly behind are processed with priority.
+    private final Comparator<CamusRequest> priorityComparator = Comparator.comparing(CamusRequest::getTopic)
+            .thenComparing(CamusRequest::estimateDataSize, Comparator.reverseOrder());
 
     private final Queue<CamusRequest> requests = new PriorityQueue<>(5, priorityComparator);
     private long length = 0;
