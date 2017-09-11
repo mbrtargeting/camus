@@ -88,7 +88,7 @@ public class EmailClient {
             }
             message.setSubject(subjectLine);
 
-            message.setContent(content, "text/html");
+            message.setContent(content, "text/plain");
             Transport.send(message);
         } catch (Exception exception) {
             LOGGER.warn("Could not send requested email. Message: " + content, exception);
