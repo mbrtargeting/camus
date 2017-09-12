@@ -9,15 +9,21 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Comparator;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 
 public class EtlSplit extends InputSplit implements Writable {
 
-    private final List<CamusRequest> requests = new ArrayList<>();
+    // Sort by topic, so that requests from the same topic are processed after each other
+    // Then reverse sort by size, so that the biggest request are processed first, so that
+    // partitions which are lagging mostly behind are processed with priority.
+    private final Comparator<CamusRequest> priorityComparator = Comparator.comparing(CamusRequest::getTopic)
+            .thenComparing(CamusRequest::estimateDataSize, Comparator.reverseOrder());
+
+    private final Queue<CamusRequest> requests = new PriorityQueue<>(5, priorityComparator);
     private long length = 0;
-    private String currentTopic = "";
 
     @Override
     public void readFields(DataInput in) throws IOException {
@@ -25,8 +31,7 @@ public class EtlSplit extends InputSplit implements Writable {
         for (int i = 0; i < size; i++) {
             CamusRequest r = new EtlRequest();
             r.readFields(in);
-            requests.add(r);
-            length += r.estimateDataSize();
+            addRequest(r);
         }
     }
 
@@ -58,18 +63,6 @@ public class EtlSplit extends InputSplit implements Writable {
     }
 
     public CamusRequest popRequest() {
-        if (requests.size() > 0) {
-            for (int i = 0; i < requests.size(); i++) {
-                // return all request for each topic before returning another topic
-                if (requests.get(i).getTopic().equals(currentTopic)) {
-                    return requests.remove(i);
-                }
-            }
-            CamusRequest cr = requests.remove(requests.size() - 1);
-            currentTopic = cr.getTopic();
-            return cr;
-        } else {
-            return null;
-        }
+        return requests.poll();
     }
 }

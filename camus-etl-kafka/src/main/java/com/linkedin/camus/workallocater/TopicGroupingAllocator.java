@@ -37,7 +37,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
 
         List<CamusRequest> groupedRequests = groupSmallRequest(requests, context);
 
-        reverseSortRequests(groupedRequests);
+        groupedRequests.sort((r1, r2) -> r1.estimateDataSize() > r2.estimateDataSize() ? -1 : 1); // reverse sort
 
         for (CamusRequest r : groupedRequests) {
             EtlSplit split = getSmallestMultiSplit(kafkaETLSplits);
@@ -52,9 +52,7 @@ public class TopicGroupingAllocator extends BaseAllocator {
     private List<CamusRequest> groupSmallRequest(List<CamusRequest> requests, JobContext context) {
         List<CamusRequest> finalRequests = new ArrayList<>();
 
-        Map<String, List<CamusRequest>>
-                requestsTopicMap
-                = new HashMap<>();
+        Map<String, List<CamusRequest>> requestsTopicMap = new HashMap<>();
         long totalEstimatedDataSize = 0;
 
         for (CamusRequest cr : requests) {
@@ -191,11 +189,6 @@ public class TopicGroupingAllocator extends BaseAllocator {
                 }
             }
             return size;
-        }
-
-        @Override
-        public long estimateDataSize(long endTime) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

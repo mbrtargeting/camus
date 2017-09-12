@@ -7,8 +7,6 @@ import org.apache.hadoop.mapreduce.JobContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
@@ -21,29 +19,12 @@ public class BaseAllocator extends WorkAllocator {
         this.props = props;
     }
 
-    protected void reverseSortRequests(List<CamusRequest> requests) {
-        // Reverse sort by size
-        Collections.sort(requests, new Comparator<CamusRequest>() {
-            @Override
-            public int compare(CamusRequest o1, CamusRequest o2) {
-                if (o2.estimateDataSize() == o1.estimateDataSize()) {
-                    return 0;
-                }
-                if (o2.estimateDataSize() < o1.estimateDataSize()) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            }
-        });
-    }
-
     @Override
     public List<InputSplit> allocateWork(List<CamusRequest> requests, JobContext context)
             throws IOException {
         int numTasks = context.getConfiguration().getInt("mapred.map.tasks", 30);
 
-        reverseSortRequests(requests);
+        requests.sort((r1, r2) -> r1.estimateDataSize() > r2.estimateDataSize() ? -1 : 1); // reverse sort
 
         List<InputSplit> kafkaETLSplits = new ArrayList<>();
 

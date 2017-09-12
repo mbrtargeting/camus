@@ -32,12 +32,11 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
     private static final String PRINT_MAX_DECODER_EXCEPTIONS = "max.decoder.exceptions.to.print";
     private static final String DEFAULT_SERVER = "server";
     private static final String DEFAULT_SERVICE = "service";
-    private static final int RECORDS_TO_READ_AFTER_TIMEOUT = 5;
     private static final Logger log = Logger.getLogger(EtlRecordReader.class);
 
     private final EtlKey key = new EtlKey();
     protected TaskAttemptContext context;
-    EtlSplit split;
+    private EtlSplit split;
     private final EtlInputFormat inputFormat;
     private Mapper<EtlKey, Writable, EtlKey, Writable>.Context mapperContext;
     private KafkaReader reader;
@@ -165,11 +164,22 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         return value;
     }
 
+    private void logPartitionSummary() {
+        String timeSpentOnPartition = periodFormatter.print(
+                new Duration(startTime, System.currentTimeMillis()).toPeriod());
+        log.info("Time spent on this partition = " + timeSpentOnPartition);
+        log.info("Num of records read for this partition = "
+                + numRecordsReadForCurrentPartition);
+        log.info("Bytes read for this partition = " + bytesReadForCurrentPartition);
+        log.info("Actual avg size for this partition = "
+                + bytesReadForCurrentPartition
+                / numRecordsReadForCurrentPartition);
+    }
+
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
 
-        if (System.currentTimeMillis() > maxPullTime
-            && numRecordsReadForCurrentPartition >= RECORDS_TO_READ_AFTER_TIMEOUT) {
+        if (System.currentTimeMillis() > maxPullTime) {
             String maxMsg = "at " + new DateTime(curTimeStamp).toString();
             log.info("Kafka pull time limit reached");
             statusMsg.append(" max read ").append(maxMsg);
@@ -186,15 +196,9 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
             mapperContext.write(key, new ExceptionWritable(topicNotFullyPulledMsg));
             log.warn(topicNotFullyPulledMsg);
 
-            String timeSpentOnPartition = periodFormatter
-                    .print(new Duration(startTime, System.currentTimeMillis()).toPeriod());
-            String timeSpentOnTopicMsg =
-                    String.format("Time spent on topic %s:%d = %s", key.getTopic(),
-                                  key.getPartition(), timeSpentOnPartition);
-            mapperContext.write(key, new ExceptionWritable(timeSpentOnTopicMsg));
-            log.info(timeSpentOnTopicMsg);
+            logPartitionSummary();
 
-            reader = null;
+            return false;
         }
 
         while (true) {
@@ -202,17 +206,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
 
                 if (reader == null || !reader.hasNext()) {
                     if (numRecordsReadForCurrentPartition != 0) {
-                        String timeSpentOnPartition =
-                                periodFormatter.print(new Duration(startTime,
-                                                                   System.currentTimeMillis())
-                                                              .toPeriod());
-                        log.info("Time spent on this partition = " + timeSpentOnPartition);
-                        log.info("Num of records read for this partition = "
-                                 + numRecordsReadForCurrentPartition);
-                        log.info("Bytes read for this partition = " + bytesReadForCurrentPartition);
-                        log.info("Actual avg size for this partition = "
-                                 + bytesReadForCurrentPartition
-                                   / numRecordsReadForCurrentPartition);
+                        logPartitionSummary();
                     }
 
                     EtlRequest request = (EtlRequest) split.popRequest();
@@ -233,10 +227,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
                             request.getOffset(),
                             request.getOffset(), 0);
                     value = null;
-                    log.info("\n\ntopic:" + request.getTopic() + " partition:" + request
-                            .getPartition() + " beginOffset:"
-                             + request.getOffset() + " estimatedLastOffset:" + request
-                                     .getLastOffset());
+                    log.info("\n\nProcessing request: " + request);
                     statusMsg.append(statusMsg.length() > 0 ? "; " : "");
                     statusMsg.append(request.getTopic()).append(":").append(request.getLeaderId())
                             .append(":").append(request.getPartition());
@@ -362,7 +353,7 @@ public class EtlRecordReader extends RecordReader<EtlKey, CamusWrapper> {
         }
     }
 
-    public void setServerService() {
+    private void setServerService() {
         if (ignoreServerServiceList.contains(key.getTopic()) || ignoreServerServiceList
                 .contains("all")) {
             key.setServer(DEFAULT_SERVER);
