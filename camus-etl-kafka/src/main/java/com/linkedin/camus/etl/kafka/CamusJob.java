@@ -309,7 +309,7 @@ public class CamusJob extends Configured implements Tool {
         FileSystem fs = FileSystem.get(job.getConfiguration());
 
         final Path execBasePath = new Path(props.getProperty(ETL_EXECUTION_BASE_PATH));
-        final Path execHistory = new Path(execBasePath, "histories");
+        final Path execHistoryPath = new Path(execBasePath, "histories");
         final Path stagingPath = new Path(execBasePath, "_staging");
         EtlMultiOutputFormat.setDestinationPath(job, stagingPath);
         log.info("Staging directory set to: " + stagingPath.toString());
@@ -321,9 +321,9 @@ public class CamusJob extends Configured implements Tool {
             fs.mkdirs(execBasePath);
         }
         fs.mkdirs(stagingPath);
-        if (!fs.exists(execHistory)) {
+        if (!fs.exists(execHistoryPath)) {
             log.info("The history base path does not exist. Creating the directory.");
-            fs.mkdirs(execHistory);
+            fs.mkdirs(execHistoryPath);
         }
 
         // enforcing max retention on the execution directories to avoid
@@ -341,7 +341,7 @@ public class CamusJob extends Configured implements Tool {
 
         long currentCount = content.getFileCount() + content.getDirectoryCount();
 
-        FileStatus[] executions = fs.listStatus(execHistory);
+        FileStatus[] executions = fs.listStatus(execHistoryPath);
         Arrays.sort(executions, new Comparator<FileStatus>() {
             public int compare(FileStatus f1, FileStatus f2) {
                 return f1.getPath().getName().compareTo(f2.getPath().getName());
@@ -417,7 +417,7 @@ public class CamusJob extends Configured implements Tool {
         job.setNumReduceTasks(0);
 
         stopTiming("pre-setup");
-        final Path newHistory = new Path(execHistory, executionDate);
+        final Path newHistory = new Path(execHistoryPath, executionDate);
         try {
             job.submit();
             job.waitForCompletion(true);
