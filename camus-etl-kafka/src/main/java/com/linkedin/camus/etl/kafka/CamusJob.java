@@ -84,7 +84,6 @@ public class CamusJob extends Configured implements Tool {
 
     public static final String ETL_DESTINATION_PATH = "etl.destination.path";
     public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
-    public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
     public static final String ETL_COUNTS_PATH = "etl.counts.path";
     public static final String ETL_COUNTS_CLASS = "etl.counts.class";
     public static final String ETL_COUNTS_CLASS_DEFAULT
@@ -310,7 +309,7 @@ public class CamusJob extends Configured implements Tool {
         FileSystem fs = FileSystem.get(job.getConfiguration());
 
         final Path execBasePath = new Path(props.getProperty(ETL_EXECUTION_BASE_PATH));
-        final Path execHistory = new Path(props.getProperty(ETL_EXECUTION_HISTORY_PATH));
+        final Path execHistory = new Path(execBasePath, "histories");
         final Path stagingPath = new Path(execBasePath, "_staging");
         EtlMultiOutputFormat.setDestinationPath(job, stagingPath);
         log.info("Staging directory set to: " + stagingPath.toString());

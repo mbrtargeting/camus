@@ -90,8 +90,6 @@ Here is an abbreviated list of commonly used parameters.  An example properties 
     * `etl.destination.path=`
 * HDFS location where you want to keep execution files, i.e. offsets, error logs, and count files
     * `etl.execution.base.path=`
-* Where completed Camus job output directories are kept, usually a sub-dir in the base.path
-    * `etl.execution.history.path=`
 * Filesystem for the above folders. This can be a hdfs:// or s3:// address.
     * `fs.default.name=`
 * List of at least one Kafka broker for Camus to pull metadata from

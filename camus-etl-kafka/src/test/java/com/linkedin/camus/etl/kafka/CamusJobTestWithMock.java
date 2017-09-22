@@ -61,7 +61,6 @@ public class CamusJobTestWithMock {
     private static final String BASE_PATH = "/camus";
     private static final String DESTINATION_PATH = BASE_PATH + "/destination";
     private static final String EXECUTION_BASE_PATH = BASE_PATH + "/execution";
-    private static final String EXECUTION_HISTORY_PATH = EXECUTION_BASE_PATH + "/history";
 
     private static final String KAFKA_HOST = "localhost";
     private static final int KAFKA_PORT = 2121;
@@ -175,7 +174,6 @@ public class CamusJobTestWithMock {
 
         props.setProperty(CamusJob.ETL_DESTINATION_PATH, destinationPath);
         props.setProperty(CamusJob.ETL_EXECUTION_BASE_PATH, path + EXECUTION_BASE_PATH);
-        props.setProperty(CamusJob.ETL_EXECUTION_HISTORY_PATH, path + EXECUTION_HISTORY_PATH);
 
         props.setProperty(EtlInputFormat.CAMUS_MESSAGE_DECODER_CLASS,
                           JsonStringMessageDecoder.class.getName());
