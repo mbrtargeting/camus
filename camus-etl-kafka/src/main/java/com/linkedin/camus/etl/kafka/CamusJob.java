@@ -340,11 +340,7 @@ public class CamusJob extends Configured implements Tool {
         long currentCount = content.getFileCount() + content.getDirectoryCount();
 
         FileStatus[] executions = fs.listStatus(execHistoryPath);
-        Arrays.sort(executions, new Comparator<FileStatus>() {
-            public int compare(FileStatus f1, FileStatus f2) {
-                return f1.getPath().getName().compareTo(f2.getPath().getName());
-            }
-        });
+        Arrays.sort(executions, Comparator.comparing(f2 -> f2.getPath().getName()));
 
         // removes oldest directory until we get under required % of count
         // quota. Won't delete the most recent directory.
@@ -358,23 +354,16 @@ public class CamusJob extends Configured implements Tool {
 
         // removing failed executions if we need room
         if (limit < currentCount) {
-            FileStatus[] failedExecutions = fs.listStatus(execBasePath, new PathFilter() {
-
-                public boolean accept(Path path) {
-                    try {
-                        dateFmt.parseDateTime(path.getName());
-                        return true;
-                    } catch (IllegalArgumentException e) {
-                        return false;
-                    }
+            FileStatus[] failedExecutions = fs.listStatus(execBasePath, path -> {
+                try {
+                    dateFmt.parseDateTime(path.getName());
+                    return true;
+                } catch (IllegalArgumentException e) {
+                    return false;
                 }
             });
 
-            Arrays.sort(failedExecutions, new Comparator<FileStatus>() {
-                public int compare(FileStatus f1, FileStatus f2) {
-                    return f1.getPath().getName().compareTo(f2.getPath().getName());
-                }
-            });
+            Arrays.sort(failedExecutions, Comparator.comparing(f -> f.getPath().getName()));
 
             for (int i = 0; i < failedExecutions.length && limit < currentCount; i++) {
                 FileStatus stat = failedExecutions[i];
