@@ -63,7 +63,6 @@ public class CamusJobTest {
     private CamusJob job;
     private TemporaryFolder folder;
     private String destinationPath;
-    private String stagingPath;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -133,7 +132,6 @@ public class CamusJobTest {
 
         String path = folder.getRoot().getAbsolutePath();
         destinationPath = path + DESTINATION_PATH;
-        stagingPath = path + STAGING_PATH;
 
         props = cluster.getProps();
 

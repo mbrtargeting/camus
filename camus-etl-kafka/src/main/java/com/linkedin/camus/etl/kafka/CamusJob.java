@@ -86,8 +86,6 @@ public class CamusJob extends Configured implements Tool {
     public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
     public static final String ETL_COUNTS_PATH = "etl.counts.path";
     public static final String ETL_COUNTS_CLASS = "etl.counts.class";
-    public static final String ETL_COUNTS_CLASS_DEFAULT
-            = "com.linkedin.camus.etl.kafka.common.EtlCounts";
     public static final String ETL_KEEP_COUNT_FILES = "etl.keep.count.files";
     public static final String ETL_BASEDIR_QUOTA_OVERIDE = "etl.basedir.quota.overide";
     public static final String
