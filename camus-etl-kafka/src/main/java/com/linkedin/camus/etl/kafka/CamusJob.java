@@ -84,11 +84,8 @@ public class CamusJob extends Configured implements Tool {
 
     public static final String ETL_DESTINATION_PATH = "etl.destination.path";
     public static final String ETL_EXECUTION_BASE_PATH = "etl.execution.base.path";
-    public static final String ETL_EXECUTION_HISTORY_PATH = "etl.execution.history.path";
     public static final String ETL_COUNTS_PATH = "etl.counts.path";
     public static final String ETL_COUNTS_CLASS = "etl.counts.class";
-    public static final String ETL_COUNTS_CLASS_DEFAULT
-            = "com.linkedin.camus.etl.kafka.common.EtlCounts";
     public static final String ETL_KEEP_COUNT_FILES = "etl.keep.count.files";
     public static final String ETL_BASEDIR_QUOTA_OVERIDE = "etl.basedir.quota.overide";
     public static final String
@@ -310,7 +307,7 @@ public class CamusJob extends Configured implements Tool {
         FileSystem fs = FileSystem.get(job.getConfiguration());
 
         final Path execBasePath = new Path(props.getProperty(ETL_EXECUTION_BASE_PATH));
-        final Path execHistory = new Path(props.getProperty(ETL_EXECUTION_HISTORY_PATH));
+        final Path execHistoryPath = new Path(execBasePath, "histories");
         final Path stagingPath = new Path(execBasePath, "_staging");
         EtlMultiOutputFormat.setDestinationPath(job, stagingPath);
         log.info("Staging directory set to: " + stagingPath.toString());
@@ -322,9 +319,9 @@ public class CamusJob extends Configured implements Tool {
             fs.mkdirs(execBasePath);
         }
         fs.mkdirs(stagingPath);
-        if (!fs.exists(execHistory)) {
+        if (!fs.exists(execHistoryPath)) {
             log.info("The history base path does not exist. Creating the directory.");
-            fs.mkdirs(execHistory);
+            fs.mkdirs(execHistoryPath);
         }
 
         // enforcing max retention on the execution directories to avoid
@@ -342,12 +339,8 @@ public class CamusJob extends Configured implements Tool {
 
         long currentCount = content.getFileCount() + content.getDirectoryCount();
 
-        FileStatus[] executions = fs.listStatus(execHistory);
-        Arrays.sort(executions, new Comparator<FileStatus>() {
-            public int compare(FileStatus f1, FileStatus f2) {
-                return f1.getPath().getName().compareTo(f2.getPath().getName());
-            }
-        });
+        FileStatus[] executions = fs.listStatus(execHistoryPath);
+        Arrays.sort(executions, Comparator.comparing(f2 -> f2.getPath().getName()));
 
         // removes oldest directory until we get under required % of count
         // quota. Won't delete the most recent directory.
@@ -361,23 +354,16 @@ public class CamusJob extends Configured implements Tool {
 
         // removing failed executions if we need room
         if (limit < currentCount) {
-            FileStatus[] failedExecutions = fs.listStatus(execBasePath, new PathFilter() {
-
-                public boolean accept(Path path) {
-                    try {
-                        dateFmt.parseDateTime(path.getName());
-                        return true;
-                    } catch (IllegalArgumentException e) {
-                        return false;
-                    }
+            FileStatus[] failedExecutions = fs.listStatus(execBasePath, path -> {
+                try {
+                    dateFmt.parseDateTime(path.getName());
+                    return true;
+                } catch (IllegalArgumentException e) {
+                    return false;
                 }
             });
 
-            Arrays.sort(failedExecutions, new Comparator<FileStatus>() {
-                public int compare(FileStatus f1, FileStatus f2) {
-                    return f1.getPath().getName().compareTo(f2.getPath().getName());
-                }
-            });
+            Arrays.sort(failedExecutions, Comparator.comparing(f -> f.getPath().getName()));
 
             for (int i = 0; i < failedExecutions.length && limit < currentCount; i++) {
                 FileStatus stat = failedExecutions[i];
@@ -418,7 +404,7 @@ public class CamusJob extends Configured implements Tool {
         job.setNumReduceTasks(0);
 
         stopTiming("pre-setup");
-        final Path newHistory = new Path(execHistory, executionDate);
+        final Path newHistory = new Path(execHistoryPath, executionDate);
         try {
             job.submit();
             job.waitForCompletion(true);
