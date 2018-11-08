@@ -78,6 +78,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 public class CamusJob extends Configured implements Tool {
@@ -115,7 +116,7 @@ public class CamusJob extends Configured implements Tool {
     public static final String KAFKA_BROKERS = "kafka.brokers";
     public static final String KAFKA_TIMEOUT_VALUE = "kafka.timeout.value";
     public static final String CAMUS_REPORTER_CLASS = "etl.reporter.class";
-    public static final String CAMUS_CALLBACK_CLASS = "etl.callback.class";
+    public static final String CAMUS_CALLBACK_CLASSES = "etl.callback.class";
     public static final String LOG4J_CONFIGURATION = "log4j.configuration";
 
     private static org.apache.log4j.Logger log;
@@ -258,8 +259,15 @@ public class CamusJob extends Configured implements Tool {
                 .get(CAMUS_REPORTER_CLASS, "com.linkedin.camus.etl.kafka.reporter.TimeReporter");
     }
 
-    public static String getCallbackClass(final JobContext jobContext) {
-        return jobContext.getConfiguration().get(CAMUS_CALLBACK_CLASS);
+    public static List<String> getCallbackClasses(final JobContext jobContext) {
+        final String configValue = jobContext.getConfiguration().get(CAMUS_CALLBACK_CLASSES);
+
+        if (configValue == null) {
+            return new ArrayList<>();
+        }
+
+        final String[] classnames = configValue.split(",");
+        return Arrays.stream(classnames).map(String::trim).collect(Collectors.toList());
     }
 
     private Job createJob(Properties props) throws IOException {
@@ -750,11 +758,13 @@ public class CamusJob extends Configured implements Tool {
      * @param job Hadoop job object.
      */
     private void executeCallback(final Job job) throws IOException, ClassNotFoundException {
-        final String callbackClass = getCallbackClass(job);
-        if (callbackClass != null) {
+        final List<String> callbackClasses = getCallbackClasses(job);
+
+        for(final String callbackClass : callbackClasses) {
             final Class cls = job.getConfiguration().getClassByName(callbackClass);
             final Callback callback = ((Callback) ReflectionUtils
                     .newInstance(cls, job.getConfiguration()));
+
             if (job.isSuccessful()) {
                 callback.onSuccess(job);
             } else {
