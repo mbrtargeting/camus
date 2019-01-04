@@ -332,6 +332,16 @@ public class CamusJob extends Configured implements Tool {
             fs.mkdirs(execHistoryPath);
         }
 
+        RemoteIterator<LocatedFileStatus> execBasePathSiblings = fs.listFiles(execBasePath.getParent(), false);
+        while (execBasePathSiblings.hasNext()) {
+            Path sibling = execBasePathSiblings.next().getPath();
+            if (!sibling.equals(execBasePath)) {
+                Path siblingHistory = new Path(sibling, "histories");
+                log.info("Old histories directory no longer needed. Deleting " + siblingHistory);
+                fs.delete(siblingHistory, true);
+            }
+        }
+
         // enforcing max retention on the execution directories to avoid
         // exceeding HDFS quota. retention is set to a percentage of available
         // quota.
