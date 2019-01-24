@@ -77,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -333,12 +334,22 @@ public class CamusJob extends Configured implements Tool {
         }
 
         RemoteIterator<LocatedFileStatus> execBasePathSiblings = fs.listFiles(execBasePath.getParent(), false);
+        long now = System.currentTimeMillis();
+        long three_days = TimeUnit.DAYS.toMillis(3);
+        long three_days_ago = now - three_days;
         while (execBasePathSiblings.hasNext()) {
             Path sibling = execBasePathSiblings.next().getPath();
             if (!sibling.equals(execBasePath)) {
                 Path siblingHistory = new Path(sibling, "histories");
-                log.info("Old histories directory no longer needed. Deleting " + siblingHistory);
-                fs.delete(siblingHistory, true);
+                RemoteIterator<LocatedFileStatus> historyFolders = fs.listFiles(siblingHistory, false);
+                while (historyFolders.hasNext()) {
+                    LocatedFileStatus historyFolder = historyFolders.next();
+                    if (three_days_ago > historyFolder.getModificationTime()) {
+                        Path historyFolderPath = historyFolder.getPath();
+                        log.info("Old histories directory no longer needed. Deleting " + historyFolderPath);
+                        fs.delete(historyFolderPath, true);
+                    }
+                }
             }
         }
 
