@@ -301,6 +301,18 @@ public class CamusJob extends Configured implements Tool {
         run(EtlInputFormat.class, EtlMultiOutputFormat.class);
     }
 
+    void delete_if_old(FileSystem fs, LocatedFileStatus input, String descriptor) throws Exception {
+        long now = System.currentTimeMillis();
+        long three_days = TimeUnit.DAYS.toMillis(3);
+        long three_days_ago = now - three_days;
+        if (three_days_ago > input.getModificationTime()) {
+            Path historyFolderPath = input.getPath();
+            log.info("Old " + descriptor + " no longer needed. Deleting " + historyFolderPath);
+            fs.delete(historyFolderPath, true);
+        }
+
+    }
+
     public void run(Class<? extends InputFormat> inputFormatClass,
                     Class<? extends OutputFormat> outputFormatClass) throws Exception {
 
@@ -333,26 +345,6 @@ public class CamusJob extends Configured implements Tool {
             fs.mkdirs(execHistoryPath);
         }
 
-        RemoteIterator<LocatedFileStatus> execBasePathSiblings = fs.listFiles(execBasePath.getParent(), false);
-        long now = System.currentTimeMillis();
-        long three_days = TimeUnit.DAYS.toMillis(3);
-        long three_days_ago = now - three_days;
-        while (execBasePathSiblings.hasNext()) {
-            Path sibling = execBasePathSiblings.next().getPath();
-            if (!sibling.equals(execBasePath)) {
-                Path siblingHistory = new Path(sibling, "histories");
-                RemoteIterator<LocatedFileStatus> historyFolders = fs.listFiles(siblingHistory, false);
-                while (historyFolders.hasNext()) {
-                    LocatedFileStatus historyFolder = historyFolders.next();
-                    if (three_days_ago > historyFolder.getModificationTime()) {
-                        Path historyFolderPath = historyFolder.getPath();
-                        log.info("Old histories directory no longer needed. Deleting " + historyFolderPath);
-                        fs.delete(historyFolderPath, true);
-                    }
-                }
-            }
-        }
-
         // enforcing max retention on the execution directories to avoid
         // exceeding HDFS quota. retention is set to a percentage of available
         // quota.
@@ -379,6 +371,21 @@ public class CamusJob extends Configured implements Tool {
             ContentSummary execContent = fs.getContentSummary(stat.getPath());
             currentCount -= execContent.getFileCount() + execContent.getDirectoryCount();
             fs.delete(stat.getPath(), true);
+        }
+
+        Path history_folder = new Path(execBasePath, "histories");
+        RemoteIterator<LocatedFileStatus> historyFolders = fs.listFiles(history_folder, false);
+        while (historyFolders.hasNext()) {
+            LocatedFileStatus historyFolder = historyFolders.next();
+            delete_if_old(fs, historyFolder, "histories directory");
+        }
+        RemoteIterator<LocatedFileStatus> execBasePathContents = fs.listFiles(execBasePath, false);
+        while (execBasePathContents.hasNext()) {
+            LocatedFileStatus contentFolder = execBasePathContents.next();
+            if (!contentFolder.getPath().getName().equals("histories") &&
+                    !contentFolder.getPath().getName().equals("_SUCCESS")) {
+                delete_if_old(fs, contentFolder, "directory");
+            }
         }
 
         // removing failed executions if we need room
