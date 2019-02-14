@@ -110,7 +110,17 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
 
     @Override
     public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+        dataWriters.asMap().forEach((k,v)->{
+            try {
+                v.close(null);
+            } catch (Throwable t) {
+                log.error("Calling close on dataWriter entry with null arg did not work: "
+                        + t.getMessage());
+            }
+        });
         dataWriters.invalidateAll();
+        dataWriters.cleanUp();
+        errorWriter.hsync();
         errorWriter.close();
     }
 

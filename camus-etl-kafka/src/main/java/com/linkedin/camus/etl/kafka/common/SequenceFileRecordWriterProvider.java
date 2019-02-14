@@ -104,6 +104,7 @@ public class SequenceFileRecordWriterProvider implements RecordWriterProvider {
 
             @Override
             public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+                writer.hsync();
                 writer.close();
             }
         };

@@ -109,6 +109,7 @@ public class StringRecordWriterProvider implements RecordWriterProvider {
         @Override
         public void close(TaskAttemptContext taskAttemptContext)
                 throws IOException, InterruptedException {
+            out.flush();
             out.close();
         }
     }
