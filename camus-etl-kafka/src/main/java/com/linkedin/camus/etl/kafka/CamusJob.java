@@ -26,14 +26,7 @@ import org.apache.commons.math3.util.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.ContentSummary;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocatedFileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
-import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
@@ -531,8 +524,15 @@ public class CamusJob extends Configured implements Tool {
                     fs.mkdirs(dstPath.getParent());
                     createdDirs.add(dstPath.getParent());
                 }
+                long srcLength = fs.getContentSummary(srcPath).getLength();
                 fs.rename(srcPath, dstPath);
                 movedFiles.add(dstPath);
+                long dstLength = fs.getContentSummary(dstPath).getLength();
+                if (srcLength != dstLength) {
+                    throw new RuntimeException(
+                            "File "+srcPath.toString()+" did not copy correctly to destination "
+                                    + dstPath.toString());
+                }
             }
         } catch (Exception e) {
             // in case of error, clean up files already created!
