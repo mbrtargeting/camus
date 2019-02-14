@@ -50,6 +50,9 @@ import org.apache.log4j.xml.DOMConfigurator;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.format.DateTimeFormatter;
@@ -534,6 +537,7 @@ public class CamusJob extends Configured implements Tool {
                             "File "+srcPath.toString()+" did not copy correctly to destination "
                                     + dstPath.toString());
                 }
+                checkLastLinesValidJson(fs, dstPath);
             }
         } catch (Exception e) {
             // in case of error, clean up files already created!
@@ -545,6 +549,44 @@ public class CamusJob extends Configured implements Tool {
             }
             throw e;
         }
+    }
+
+    private void checkLastLinesValidJson(FileSystem fs, Path dstPath) throws IOException {
+        FSDataInputStream dstStream = fs.open(dstPath);
+        long dstSize = fs.getContentSummary(dstPath).getLength();
+        long offset = -1024L;
+        offset = Math.max(dstSize + offset, 0L);
+        try {
+            dstStream.seek(offset);
+            byte[] buffer = new byte[Math.toIntExact(Math.abs(offset))];
+            dstStream.readFully(offset, buffer);
+            String tail = buffer.toString();
+            String lines[] = tail.split("\\r?\\n");
+            //Since the buffer does not necessarily start at a line break,
+            //the first line is likely garbage and that's OK. Therefore i must start at 1
+            log.info(String.format("Validating %s lines of JSON",
+                    Integer.toString(lines.length-1)));
+            for (int i = 1; i<lines.length; i++) {
+                if (!isJSONValid(lines[i])) {
+                    throw new RuntimeException("Invalid JSON detected in " + dstPath.toString());
+                }
+            }
+        } finally {
+            dstStream.close();
+        }
+    }
+
+    private boolean isJSONValid(String test) {
+        try {
+            new JSONObject(test);
+        } catch (JSONException ex) {
+            try {
+                new JSONArray(test);
+            } catch (JSONException ex1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void checkIfTooManySkippedMsg(Counters counters) {
