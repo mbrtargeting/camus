@@ -497,6 +497,7 @@ public class CamusJob extends Configured implements Tool {
         }
         createReport(job, timingMap);
         executeCallback(job);
+        fs.close();
     }
 
     private void moveDataToDestination(final FileSystem fs, final Path stagingPath,
