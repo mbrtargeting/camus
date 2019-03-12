@@ -1,17 +1,20 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.etl.IEtlKey;
 import com.linkedin.camus.etl.RecordWriterProvider;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.ExceptionWritable;
-
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
@@ -21,13 +24,6 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
-
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import javax.annotation.ParametersAreNonnullByDefault;
 
 
 public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
@@ -44,24 +40,25 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
      * the case if you have data with a constantly growing timestamp.
      */
     private final Cache<String, RecordWriter<IEtlKey, CamusWrapper>> dataWriters;
+    private final WriterRemovalListener removalListener;
     private final TaskAttemptContext context;
-    private Writer errorWriter = null;
+    private Writer errorWriter;
     private String currentTopic = "";
-    private long beginTimeStamp = 0;
+    private long beginTimeStamp;
     private final EtlMultiOutputCommitter committer;
 
     public EtlMultiOutputRecordWriter(TaskAttemptContext context, EtlMultiOutputCommitter committer)
-            throws IOException, InterruptedException {
+            throws IOException {
         this.context = context;
         this.committer = committer;
         final String uniqueFile =
                 EtlMultiOutputFormat.getUniqueFile(context, EtlMultiOutputFormat.ERRORS_PREFIX, "");
         errorWriter =
-                SequenceFile.createWriter(FileSystem.get(context.getConfiguration()),
-                                          context.getConfiguration(),
-                                          new Path(committer.getWorkPath(), uniqueFile),
-                                          EtlKey.class,
-                                          ExceptionWritable.class);
+                SequenceFile.createWriter(context.getConfiguration(),
+                                          SequenceFile.Writer.file(new Path(committer.getWorkPath(),
+                                                                            uniqueFile)),
+                                          SequenceFile.Writer.keyClass(EtlKey.class),
+                                          SequenceFile.Writer.valueClass(ExceptionWritable.class));
 
         if (EtlInputFormat.getKafkaMaxHistoricalDays(context) != -1) {
             int maxDays = EtlInputFormat.getKafkaMaxHistoricalDays(context);
@@ -75,8 +72,9 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
         final int maxOpenWriters = context.getConfiguration().getInt(ETL_MAX_OPEN_WRITERS, 100);
         log.info(String.format("Limiting open writers to %d", maxOpenWriters));
 
+        removalListener = new WriterRemovalListener(context);
         dataWriters = CacheBuilder.newBuilder().maximumSize(maxOpenWriters)
-                .removalListener(new WriterRemovalListener(context)).build();
+                .removalListener(removalListener).build();
     }
 
     private Counter getTopicSkipOldCounter() {
@@ -109,8 +107,11 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
     }
 
     @Override
-    public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+    public void close(TaskAttemptContext context) throws IOException {
         dataWriters.invalidateAll();
+        if (removalListener.lastException != null) {
+            throw removalListener.lastException;
+        }
         errorWriter.close();
     }
 
@@ -170,8 +171,9 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
             implements RemovalListener<String, RecordWriter<IEtlKey, CamusWrapper>> {
 
         private final TaskAttemptContext context;
+        private IOException lastException = null;
 
-        public WriterRemovalListener(final TaskAttemptContext context) {
+        private WriterRemovalListener(final TaskAttemptContext context) {
             this.context = context;
         }
 
@@ -184,9 +186,23 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
                         .getValue();
                 if (recordWriter != null) {
                     log.info("Invalidating writer for " + removalNotification.getKey());
-                    removalNotification.getValue().close(context);
+                    try {
+                        removalNotification.getValue().close(context);
+                    } catch (final IllegalArgumentException e) {
+                        final Throwable cause = e.getCause();
+                        if (cause instanceof IOException) {
+                            log.warn("Throwing cause of Exception", e);
+                            // Sometimes Hadoop tries to suppress an exception in itself causing an
+                            // IllegalArgumentException
+                            throw (IOException) cause;
+                        }
+                        throw e;
+                    }
                 }
-            } catch (final IOException | InterruptedException e) {
+            } catch (final IOException e) {
+                lastException = e;
+                log.error(e);
+            } catch (final InterruptedException e) {
                 log.error(e);
             }
         }
