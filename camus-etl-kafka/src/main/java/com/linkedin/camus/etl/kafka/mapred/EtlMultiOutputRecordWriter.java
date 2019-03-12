@@ -40,6 +40,7 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
      * the case if you have data with a constantly growing timestamp.
      */
     private final Cache<String, RecordWriter<IEtlKey, CamusWrapper>> dataWriters;
+    private final WriterRemovalListener removalListener;
     private final TaskAttemptContext context;
     private Writer errorWriter;
     private String currentTopic = "";
@@ -71,8 +72,9 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
         final int maxOpenWriters = context.getConfiguration().getInt(ETL_MAX_OPEN_WRITERS, 100);
         log.info(String.format("Limiting open writers to %d", maxOpenWriters));
 
+        removalListener = new WriterRemovalListener(context);
         dataWriters = CacheBuilder.newBuilder().maximumSize(maxOpenWriters)
-                .removalListener(new WriterRemovalListener(context)).build();
+                .removalListener(removalListener).build();
     }
 
     private Counter getTopicSkipOldCounter() {
@@ -105,8 +107,11 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
     }
 
     @Override
-    public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+    public void close(TaskAttemptContext context) throws IOException {
         dataWriters.invalidateAll();
+        if (removalListener.lastException != null) {
+            throw removalListener.lastException;
+        }
         errorWriter.close();
     }
 
@@ -166,8 +171,9 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
             implements RemovalListener<String, RecordWriter<IEtlKey, CamusWrapper>> {
 
         private final TaskAttemptContext context;
+        private IOException lastException = null;
 
-        public WriterRemovalListener(final TaskAttemptContext context) {
+        private WriterRemovalListener(final TaskAttemptContext context) {
             this.context = context;
         }
 
@@ -180,9 +186,23 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
                         .getValue();
                 if (recordWriter != null) {
                     log.info("Invalidating writer for " + removalNotification.getKey());
-                    removalNotification.getValue().close(context);
+                    try {
+                        removalNotification.getValue().close(context);
+                    } catch (final IllegalArgumentException e) {
+                        final Throwable cause = e.getCause();
+                        if (cause instanceof IOException) {
+                            log.warn("Throwing cause of Exception", e);
+                            // Sometimes Hadoop tries to suppress an exception in itself causing an
+                            // IllegalArgumentException
+                            throw (IOException) cause;
+                        }
+                        throw e;
+                    }
                 }
-            } catch (final IOException | InterruptedException e) {
+            } catch (final IOException e) {
+                lastException = e;
+                log.error(e);
+            } catch (final InterruptedException e) {
                 log.error(e);
             }
         }
