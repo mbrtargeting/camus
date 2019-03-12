@@ -1,17 +1,20 @@
 package com.linkedin.camus.etl.kafka.mapred;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
-
 import com.linkedin.camus.coders.CamusWrapper;
 import com.linkedin.camus.etl.IEtlKey;
 import com.linkedin.camus.etl.RecordWriterProvider;
 import com.linkedin.camus.etl.kafka.common.EtlKey;
 import com.linkedin.camus.etl.kafka.common.ExceptionWritable;
-
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
@@ -21,13 +24,6 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
-
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import javax.annotation.ParametersAreNonnullByDefault;
 
 
 public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
@@ -45,23 +41,23 @@ public class EtlMultiOutputRecordWriter extends RecordWriter<EtlKey, Object> {
      */
     private final Cache<String, RecordWriter<IEtlKey, CamusWrapper>> dataWriters;
     private final TaskAttemptContext context;
-    private Writer errorWriter = null;
+    private Writer errorWriter;
     private String currentTopic = "";
-    private long beginTimeStamp = 0;
+    private long beginTimeStamp;
     private final EtlMultiOutputCommitter committer;
 
     public EtlMultiOutputRecordWriter(TaskAttemptContext context, EtlMultiOutputCommitter committer)
-            throws IOException, InterruptedException {
+            throws IOException {
         this.context = context;
         this.committer = committer;
         final String uniqueFile =
                 EtlMultiOutputFormat.getUniqueFile(context, EtlMultiOutputFormat.ERRORS_PREFIX, "");
         errorWriter =
-                SequenceFile.createWriter(FileSystem.get(context.getConfiguration()),
-                                          context.getConfiguration(),
-                                          new Path(committer.getWorkPath(), uniqueFile),
-                                          EtlKey.class,
-                                          ExceptionWritable.class);
+                SequenceFile.createWriter(context.getConfiguration(),
+                                          SequenceFile.Writer.file(new Path(committer.getWorkPath(),
+                                                                            uniqueFile)),
+                                          SequenceFile.Writer.keyClass(EtlKey.class),
+                                          SequenceFile.Writer.valueClass(ExceptionWritable.class));
 
         if (EtlInputFormat.getKafkaMaxHistoricalDays(context) != -1) {
             int maxDays = EtlInputFormat.getKafkaMaxHistoricalDays(context);
